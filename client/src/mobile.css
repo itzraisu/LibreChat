@@ -1,3 +1,4 @@
+/* Base styles */
 .hover-button.active {
   display: block;
   visibility: visible;
@@ -11,11 +12,9 @@
   position: fixed;
   z-index: 64;
   top: 0;
-
-  /* max-width: 260px; */
-
   bottom: 0;
   opacity: 0;
+  transition: all 0.15s;
 }
 
 .nav.active {
@@ -29,87 +28,53 @@
   pointer-events: auto;
 }
 
-@media (max-width: 767px) {
-  .nav {
-    width: calc(100% - 10px)  ;
-    transition: all 0.15s;
-  }
-  .nav-mask {
-    position: fixed;
-    z-index: 63;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    background-color: rgba(7, 7, 7, 0.4);
-    padding-left: 420px;
-    padding-top: 12px;
-    opacity: 0;
-    transition: all 0.5s;
-    pointer-events: none;
-  }
-
-  .nav-open-button {
-    opacity: 0;
-  }
-
-  .nav-mask.active {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .nav.active {
-    position: fixed;
-  }
+.nav-mask {
+  position: fixed;
+  z-index: 63;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-color: rgba(7, 7, 7, 0.4);
+  padding-left: 420px;
+  padding-top: 12px;
+  opacity: 0;
+  transition: all 0.5s;
+  pointer-events: none;
 }
 
-@media (min-width: 1024px) {
-  .switch-container {
-    display: none;
-  }
+.nav-open-button {
+  opacity: 0;
 }
 
-
-  .switch-result {
-    display: block !important;
-    visibility: visible;
-  }
-
-@media (max-width: 1024px) {
-  /* .sibling-switch {
-        left: 114px;
-        top: unset;
-        bottom: 4px;
-        visibility: visible;
-        z-index: 2;
-    } */
-  .sibling-switch {
-    display: none;
-  }
-
-  .hover-button {
-    display: block;
-    visibility: visible;
-  }
+.switch-container {
+  display: block;
 }
 
-@media (max-width: 767px) {
-  .input-panel-button {
-    border: 0;
-  }
+.switch-result {
+  display: block !important;
+  visibility: visible;
+}
 
-  .input-panel-button svg {
-    width: 16px;
-    height: 16px;
-  }
+.sibling-switch {
+  display: none;
+}
 
-  .input-panel {
-  }
+.hover-button {
+  display: block;
+  visibility: visible;
+}
 
-  .nav-open-button
-  {
-    visibility: hidden;
-  }
+.input-panel-button {
+  border: 0;
+}
+
+.input-panel-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.input-panel {
 }
 
 .hide-scrollbar {
@@ -131,39 +96,21 @@
   width: 100px;
 }
 
+/* Sidenav styles */
 @media (max-width: 767px) {
   .sidenav {
-    /* width: calc(100% - 10px)  ; */
     transition: all 0.15s;
     position: fixed;
     z-index: 66;
     top: 0;
     max-width: 320px;
-  
-    /* max-width: 260px; */
-  
     bottom: 0;
-    right: 0
-    /* opacity: 0; */
-  }
-  .sidenav-mask {
-    position: fixed;
-    z-index: 65;
-    left: 0;
     right: 0;
-    top: 0;
-    bottom: 0;
-    background-color: rgba(86, 88, 105, 0.75);
-    padding-left: 420px;
-    padding-top: 12px;
-    opacity: 0;
-    transition: all 0.5s;
-    pointer-events: none;
   }
 
-  .sidenav-mask.active {
-    opacity: 1;
-    pointer-events: auto;
+  .sidenav-mask {
+    opacity: 0;
+    pointer-events: none;
   }
 
   .sidenav.active {
@@ -171,12 +118,33 @@
   }
 }
 
+/* Navigation styles */
+@media (max-width: 1024px) {
+  .switch-container {
+    display: none;
+  }
+
+  .nav {
+    width: calc(100% - 10px);
+    transition: all 0.15s;
+  }
+
+  .nav-open-button {
+    visibility: hidden;
+  }
+
+  .nav.active {
+    position: fixed;
+  }
+}
+
+/* Animation styles */
 @keyframes tuning {
   0% { transform: rotate(30deg); }
   25% { transform: rotate(110deg); }
   50% { transform: rotate(-40deg); }
-  75% { transform: rotate(80deg) }
-  100% { transform: rotate(30deg) }
+  75% { transform: rotate(80deg); }
+  100% { transform: rotate(30deg); }
 }
 
 .rotate {
