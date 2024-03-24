@@ -57,44 +57,41 @@ const Nav = ({ navVisible, setNavVisible }) => {
   const { refreshConversations } = useConversations();
   const setSearchResultMessages = useSetRecoilState(store.searchResultMessages);
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useConversationsInfiniteQuery(
+  const { data: conversationsData, fetchNextPage: fetchConversationsNextPage, hasNextPage: conversationsHasNextPage, isFetchingNextPage: conversationsIsFetchingNextPage } = useConversationsInfiniteQuery(
     { pageNumber: pageNumber.toString() },
     { enabled: isAuthenticated },
   );
 
-  const searchQueryRes = useSearchInfiniteQuery(
+  const { data: searchData, fetchNextPage: fetchSearchNextPage, hasNextPage: searchHasNextPage, isFetchingNextPage: searchIsFetchingNextPage } = useSearchInfiniteQuery(
     { pageNumber: pageNumber.toString(), searchQuery: searchQuery },
     { enabled: isAuthenticated && !!searchQuery.length },
   );
 
   const { containerRef, moveToTop } = useNavScrolling({
     setShowLoading,
-    hasNextPage: searchQuery ? searchQueryRes.hasNextPage : hasNextPage,
-    fetchNextPage: searchQuery ? searchQueryRes.fetchNextPage : fetchNextPage,
-    isFetchingNextPage: searchQuery ? searchQueryRes.isFetchingNextPage : isFetchingNextPage,
+    hasNextPage: searchQuery ? searchHasNextPage : conversationsHasNextPage,
+    fetchNextPage: searchQuery ? fetchSearchNextPage : fetchConversationsNextPage,
+    isFetchingNextPage: searchQuery ? searchIsFetchingNextPage : conversationsIsFetchingNextPage,
   });
 
   const conversations = useMemo(
     () =>
-      (searchQuery ? searchQueryRes?.data : data)?.pages.flatMap((page) => page.conversations) ||
+      (searchQuery ? searchData?.pages.flatMap((page) => page.conversations) : conversationsData?.pages.flatMap((page) => page.conversations)) ||
       [],
-    [data, searchQuery, searchQueryRes?.data],
+    [conversationsData, searchData, searchQuery],
   );
 
   const onSearchSuccess = useCallback(({ data }: { data: ConversationListResponse }) => {
     const res = data;
     searchPlaceholderConversation();
     setSearchResultMessages(res.messages);
-    /* disabled due recoil methods not recognized as state setters */
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array
+  }, []);
 
   useEffect(() => {
-    //we use isInitialLoading here instead of isLoading because query is disabled by default
-    if (searchQueryRes.data) {
-      onSearchSuccess({ data: searchQueryRes.data.pages[0] });
+    if (searchData && searchData.pages[0]) {
+      onSearchSuccess({ data: searchData.pages[0] });
     }
-  }, [searchQueryRes.data, searchQueryRes.isInitialLoading, onSearchSuccess]);
+  }, [searchData, onSearchSuccess]);
 
   const clearSearch = () => {
     setPageNumber(1);
@@ -105,7 +102,7 @@ const Nav = ({ navVisible, setNavVisible }) => {
   };
 
   const toggleNavVisible = () => {
-    setNavVisible((prev: boolean) => {
+    setNavVisible((prev) => {
       localStorage.setItem('navVisible', JSON.stringify(!prev));
       return !prev;
     });
@@ -140,55 +137,4 @@ const Nav = ({ navVisible, setNavVisible }) => {
                   'flex h-full min-h-0 flex-col transition-opacity',
                   isToggleHovering && !isSmallScreen ? 'opacity-50' : 'opacity-100',
                 )}
-              >
-                <div
-                  className={cn(
-                    'scrollbar-trigger relative h-full w-full flex-1 items-start border-white/20',
-                  )}
-                >
-                  <nav className="flex h-full w-full flex-col px-3 pb-3.5">
-                    <div
-                      className={cn(
-                        '-mr-2 flex-1 flex-col overflow-y-auto pr-2 transition-opacity duration-500',
-                        isHovering ? '' : 'scrollbar-transparent',
-                      )}
-                      onMouseEnter={handleMouseEnter}
-                      onMouseLeave={handleMouseLeave}
-                      ref={containerRef}
-                    >
-                      <NewChat
-                        toggleNav={itemToggleNav}
-                        subHeaders={isSearchEnabled && <SearchBar clearSearch={clearSearch} />}
-                      />
-                      <Conversations
-                        conversations={conversations}
-                        moveToTop={moveToTop}
-                        toggleNav={itemToggleNav}
-                      />
-                      {(isFetchingNextPage || showLoading) && (
-                        <Spinner
-                          className={cn('m-1 mx-auto mb-4 h-4 w-4 text-black dark:text-white')}
-                        />
-                      )}
-                    </div>
-                    <NavLinks />
-                  </nav>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <NavToggle
-          isHovering={isToggleHovering}
-          setIsHovering={setIsToggleHovering}
-          onToggle={toggleNavVisible}
-          navVisible={navVisible}
-          className="fixed left-0 top-1/2 z-40"
-        />
-        <div className={`nav-mask${navVisible ? ' active' : ''}`} onClick={toggleNavVisible} />
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
-
-export default memo(Nav);
+             
