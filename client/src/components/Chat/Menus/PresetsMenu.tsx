@@ -1,12 +1,17 @@
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 import { BookCopy } from 'lucide-react';
-import { Content, Portal, Root, Trigger } from '@radix-ui/react-popover';
-import { EditPresetDialog, PresetItems } from './Presets';
+import { Root, Trigger, Content, Portal } from '@radix-ui/react-popover';
+import PresetItems from './Presets';
+import EditPresetDialog from './EditPresetDialog';
 import { useLocalize, usePresets } from '~/hooks';
 import { useChatContext } from '~/Providers';
 import { cn } from '~/utils';
 
-const PresetsMenu: FC = () => {
+interface PresetsMenuProps {
+  children: ReactNode;
+}
+
+const PresetsMenu: FC<PresetsMenuProps> = ({ children }) => {
   const localize = useLocalize();
   const {
     presetsQuery,
@@ -22,6 +27,7 @@ const PresetsMenu: FC = () => {
   const { preset } = useChatContext();
 
   const presets = presetsQuery.data || [];
+
   return (
     <Root>
       <Trigger asChild>
@@ -35,7 +41,7 @@ const PresetsMenu: FC = () => {
           data-testid="presets-button"
           title={localize('com_endpoint_examples')}
         >
-          <BookCopy className="icon-sm" id="presets-button" />
+          <BookCopy className="icon-sm" id="presets-button" alt="Presets" />
         </button>
       </Trigger>
       <Portal>
@@ -53,6 +59,7 @@ const PresetsMenu: FC = () => {
             side="bottom"
             align="center"
             className="mt-2 max-h-[495px] overflow-x-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-700 dark:text-white md:min-w-[400px]"
+            data-testid="presets-content"
           >
             <PresetItems
               presets={presets}
