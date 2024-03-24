@@ -15,30 +15,34 @@ const {
   messageUserLimiter,
 } = require('~/server/middleware');
 
-const { LIMIT_CONCURRENT_MESSAGES, LIMIT_MESSAGE_IP, LIMIT_MESSAGE_USER } = process.env ?? {};
+const { LIMIT_CONCURRENT_MESSAGES, LIMIT_MESSAGE_IP, LIMIT_MESSAGE_USER } = process.env || {};
+const DEFAULT_LIMITS = {
+  LIMIT_CONCURRENT_MESSAGES: 10,
+  LIMIT_MESSAGE_IP: 100,
+  LIMIT_MESSAGE_USER: 500,
+};
 
 const router = express.Router();
+
+const checkLimits = (limitName) => {
+  if (isEnabled(limitName)) {
+    return [eval(limitName)];
+  }
+  return [];
+};
 
 router.use(requireJwtAuth);
 router.use(checkBan);
 router.use(uaParser);
 
-if (isEnabled(LIMIT_CONCURRENT_MESSAGES)) {
-  router.use(concurrentLimiter);
-}
+const limiterMiddleware = checkLimits(LIMIT_CONCURRENT_MESSAGES)
+  .concat(checkLimits(LIMIT_MESSAGE_IP))
+  .concat(checkLimits(LIMIT_MESSAGE_USER));
 
-if (isEnabled(LIMIT_MESSAGE_IP)) {
-  router.use(messageIpLimiter);
-}
-
-if (isEnabled(LIMIT_MESSAGE_USER)) {
-  router.use(messageUserLimiter);
-}
+limiterMiddleware.forEach((middleware) => {
+  if (middleware) {
+    router.use(middleware);
+  }
+});
 
 router.use([`/${EModelEndpoint.azureOpenAI}`, `/${EModelEndpoint.openAI}`], openAI);
-router.use(`/${EModelEndpoint.gptPlugins}`, gptPlugins);
-router.use(`/${EModelEndpoint.anthropic}`, anthropic);
-router.use(`/${EModelEndpoint.google}`, google);
-router.use(`/${EModelEndpoint.custom}`, custom);
-
-module.exports = router;
