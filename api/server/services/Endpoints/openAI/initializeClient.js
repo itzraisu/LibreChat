@@ -11,24 +11,34 @@ const { OpenAIClient } = require('~/app');
 const initializeClient = async ({ req, res, endpointOption }) => {
   const {
     PROXY,
-    OPENAI_API_KEY,
-    AZURE_API_KEY,
-    OPENAI_REVERSE_PROXY,
-    AZURE_OPENAI_BASEURL,
-    OPENAI_SUMMARIZE,
-    DEBUG_OPENAI,
+    OPENAI_API_KEY: openaiApiKeyEnv,
+    AZURE_API_KEY: azureApiKeyEnv,
+    OPENAI_REVERSE_PROXY: openaiReverseProxyEnv,
+    AZURE_OPENAI_BASEURL: azureOpenAIBaseURLEnv,
+    OPENAI_SUMMARIZE: openaiSummarizeEnv,
+    DEBUG_OPENAI: debugOpenAIEnv,
   } = process.env;
+
   const { key: expiresAt, endpoint, model: modelName } = req.body;
-  const contextStrategy = isEnabled(OPENAI_SUMMARIZE) ? 'summarize' : null;
+
+  // Validate modelName and endpoint
+  if (!Object.values(EModelEndpoint).includes(endpoint)) {
+    throw new Error(`Invalid endpoint provided: ${endpoint}`);
+  }
+  if (!modelName) {
+    throw new Error(`Invalid model name provided: ${modelName}`);
+  }
+
+  const contextStrategy = isEnabled(openaiSummarizeEnv) ? 'summarize' : null;
 
   const credentials = {
-    [EModelEndpoint.openAI]: OPENAI_API_KEY,
-    [EModelEndpoint.azureOpenAI]: AZURE_API_KEY,
+    [EModelEndpoint.openAI]: openaiApiKeyEnv,
+    [EModelEndpoint.azureOpenAI]: azureApiKeyEnv,
   };
 
   const baseURLOptions = {
-    [EModelEndpoint.openAI]: OPENAI_REVERSE_PROXY,
-    [EModelEndpoint.azureOpenAI]: AZURE_OPENAI_BASEURL,
+    [EModelEndpoint.openAI]: openaiReverseProxyEnv,
+    [EModelEndpoint.azureOpenAI]: azureOpenAIBaseURLEnv,
   };
 
   const userProvidesKey = isUserProvided(credentials[endpoint]);
@@ -54,7 +64,7 @@ const initializeClient = async ({ req, res, endpointOption }) => {
   let baseURL = userProvidesURL ? userValues?.baseURL : baseURLOptions[endpoint];
 
   const clientOptions = {
-    debug: isEnabled(DEBUG_OPENAI),
+    debug: isEnabled(debugOpenAIEnv),
     contextStrategy,
     reverseProxyUrl: baseURL ? baseURL : null,
     proxy: PROXY ?? null,
@@ -71,7 +81,7 @@ const initializeClient = async ({ req, res, endpointOption }) => {
     const { modelGroupMap, groupMap } = azureConfig;
     const {
       azureOptions,
-      baseURL,
+      baseURL: azureBaseURL,
       headers = {},
       serverless,
     } = mapModelToAzureConfig({
@@ -80,7 +90,7 @@ const initializeClient = async ({ req, res, endpointOption }) => {
       groupMap,
     });
 
-    clientOptions.reverseProxyUrl = baseURL ?? clientOptions.reverseProxyUrl;
+    clientOptions.reverseProxyUrl = azureBaseURL ?? clientOptions.reverseProxyUrl;
     clientOptions.headers = resolveHeaders({ ...headers, ...(clientOptions.headers ?? {}) });
 
     clientOptions.titleConvo = azureConfig.titleConvo;
