@@ -1,4 +1,4 @@
-import { cn } from '~/utils';
+import { classNames } from '~/utils';
 
 export default function LightningIcon({ className = '' }) {
   return (
@@ -9,7 +9,7 @@ export default function LightningIcon({ className = '' }) {
       strokeWidth="1.5"
       stroke="currentColor"
       aria-hidden="true"
-      className={cn('h-6 w-6', className)}
+      className={classNames('h-6 w-6', className)}
     >
       <path
         strokeLinecap="round"
