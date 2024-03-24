@@ -1,14 +1,7 @@
 const fs = require('fs');
-const { createOpenAPIPlugin, getSpec, readSpecFile } = require('./OpenAPIPlugin');
+const path = require('path');
+const { createOpenAPIPlugin } = require('./OpenAPIPlugin');
 
-global.fetch = jest.fn().mockImplementationOnce(() => {
-  return new Promise((resolve) => {
-    resolve({
-      ok: true,
-      json: () => Promise.resolve({ key: 'value' }),
-    });
-  });
-});
 jest.mock('fs', () => ({
   promises: {
     readFile: jest.fn(),
@@ -16,57 +9,97 @@ jest.mock('fs', () => ({
   existsSync: jest.fn(),
 }));
 
+const readFileMock = jest.fn();
+const existsSyncMock = jest.fn();
+
+beforeEach(() => {
+  fs.promises.readFile = readFileMock;
+  fs.existsSync = existsSyncMock;
+
+  readFileMock.mockReset();
+  existsSyncMock.mockReset();
+});
+
 describe('readSpecFile', () => {
   it('reads JSON file correctly', async () => {
-    fs.promises.readFile.mockResolvedValue(JSON.stringify({ test: 'value' }));
-    const result = await readSpecFile('test.json');
+    const filePath = 'test.json';
+    const fileContent = JSON.stringify({ test: 'value' });
+
+    readFileMock.mockResolvedValue(fileContent);
+
+    const result = await readSpecFile(filePath);
+
     expect(result).toEqual({ test: 'value' });
+    expect(readFileMock).toBeCalledWith(path.resolve(filePath), 'utf-8');
   });
 
   it('reads YAML file correctly', async () => {
-    fs.promises.readFile.mockResolvedValue('test: value');
-    const result = await readSpecFile('test.yaml');
+    const filePath = 'test.yaml';
+    const fileContent = 'test: value';
+
+    readFileMock.mockResolvedValue(fileContent);
+
+    const result = await readSpecFile(filePath);
+
     expect(result).toEqual({ test: 'value' });
+    expect(readFileMock).toBeCalledWith(path.resolve(filePath), 'utf-8');
   });
 
   it('handles error correctly', async () => {
-    fs.promises.readFile.mockRejectedValue(new Error('test error'));
-    const result = await readSpecFile('test.json');
+    const filePath = 'test.json';
+    const errorMessage = 'test error';
+
+    readFileMock.mockRejectedValue(new Error(errorMessage));
+
+    const result = await readSpecFile(filePath);
+
     expect(result).toBe(false);
+    expect(readFileMock).toBeCalledWith(path.resolve(filePath), 'utf-8');
   });
 });
 
 describe('getSpec', () => {
   it('fetches spec from url correctly', async () => {
-    const parsedJson = await getSpec('https://www.instacart.com/.well-known/ai-plugin.json');
+    const url = 'https://www.instacart.com/.well-known/ai-plugin.json';
+    const parsedJson = await getSpec(url);
     const isObject = typeof parsedJson === 'object';
+
     expect(isObject).toEqual(true);
   });
 
   it('reads spec from file correctly', async () => {
-    fs.existsSync.mockReturnValue(true);
-    fs.promises.readFile.mockResolvedValue(JSON.stringify({ test: 'value' }));
-    const result = await getSpec('test.json');
+    const filePath = 'test.json';
+    const fileContent = JSON.stringify({ test: 'value' });
+    existsSyncMock.mockReturnValue(true);
+
+    readFileMock.mockResolvedValue(fileContent);
+
+    const result = await getSpec(filePath);
+
     expect(result).toEqual({ test: 'value' });
+    expect(readFileMock).toBeCalledWith(path.resolve(filePath), 'utf-8');
   });
 
   it('returns false when file does not exist', async () => {
-    fs.existsSync.mockReturnValue(false);
-    const result = await getSpec('test.json');
+    const filePath = 'test.json';
+
+    existsSyncMock.mockReturnValue(false);
+
+    const result = await getSpec(filePath);
+
     expect(result).toBe(false);
   });
 });
 
 describe('createOpenAPIPlugin', () => {
   it('returns null when getSpec throws an error', async () => {
+    const errorMessage = 'test error';
+
+    getSpec.mockRejectedValue(new Error(errorMessage));
+
     const result = await createOpenAPIPlugin({ data: { api: { url: 'invalid' } } });
+
     expect(result).toBe(null);
   });
 
   it('returns null when no spec is found', async () => {
-    const result = await createOpenAPIPlugin({});
-    expect(result).toBe(null);
-  });
-
-  // Add more tests here for different scenarios
-});
