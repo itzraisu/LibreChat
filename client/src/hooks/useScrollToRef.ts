@@ -1,13 +1,19 @@
-import { RefObject, useCallback } from 'react';
+import { useRef, useCallback, useImperativeHandle } from 'react';
 import throttle from 'lodash/throttle';
 
 type TUseScrollToRef = {
-  targetRef: RefObject<HTMLDivElement>;
+  targetRef: React.RefObject<HTMLDivElement>;
   callback: () => void;
   smoothCallback: () => void;
 };
 
-export default function useScrollToRef({ targetRef, callback, smoothCallback }: TUseScrollToRef) {
+type TThrottle = <T extends (...args: any[]) => any>(func: T, limit: number) => T;
+
+export default function useScrollToRef({
+  targetRef,
+  callback,
+  smoothCallback,
+}: TUseScrollToRef) {
   const logAndScroll = (behavior: 'instant' | 'smooth', callbackFn: () => void) => {
     // Debugging:
     // console.log(`Scrolling with behavior: ${behavior}, Time: ${new Date().toISOString()}`);
@@ -15,25 +21,20 @@ export default function useScrollToRef({ targetRef, callback, smoothCallback }: 
     callbackFn();
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const throttleFunc: TThrottle = throttle;
+
   const scrollToRef = useCallback(
-    throttle(() => logAndScroll('instant', callback), 250, { leading: true }),
-    [targetRef],
+    () => throttleFunc(() => logAndScroll('instant', callback), 250),
+    [callback],
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const scrollToRefSmooth = useCallback(
-    throttle(() => logAndScroll('smooth', smoothCallback), 750, { leading: true }),
-    [targetRef],
+    () => throttleFunc(() => logAndScroll('smooth', smoothCallback), 750),
+    [smoothCallback],
   );
 
-  const handleSmoothToRef: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-    e.preventDefault();
-    scrollToRefSmooth();
-  };
-
-  return {
+  useImperativeHandle(targetRef, () => ({
     scrollToRef,
-    handleSmoothToRef,
-  };
-}
+  }));
+
+  const handleSmoothToRef: React.MouseEventHandler<HTMLButtonElement> =
