@@ -5,12 +5,12 @@ const User = require('~/models/User');
 
 const facebookLogin = async (accessToken, refreshToken, profile, cb) => {
   try {
-    const email = profile.emails[0]?.value;
-    const facebookId = profile.id;
+    const { emails, id, photos } = profile;
+    const email = emails[0]?.value;
+    const avatarUrl = photos[0]?.value;
     const oldUser = await User.findOne({ email });
     const ALLOW_SOCIAL_REGISTRATION =
       process.env.ALLOW_SOCIAL_REGISTRATION?.toLowerCase() === 'true';
-    const avatarUrl = profile.photos[0]?.value;
 
     if (oldUser) {
       await handleExistingUser(oldUser, avatarUrl);
@@ -18,14 +18,15 @@ const facebookLogin = async (accessToken, refreshToken, profile, cb) => {
     }
 
     if (ALLOW_SOCIAL_REGISTRATION) {
+      const { name: { givenName, familyName }, displayName } = profile;
       const newUser = await createNewUser({
         email,
         avatarUrl,
         provider: 'facebook',
         providerKey: 'facebookId',
-        providerId: facebookId,
-        username: profile.displayName,
-        name: profile.name?.givenName + ' ' + profile.name?.familyName,
+        providerId: id,
+        username: displayName,
+        name: `${givenName} ${familyName}`,
       });
       return cb(null, newUser);
     }
@@ -35,15 +36,19 @@ const facebookLogin = async (accessToken, refreshToken, profile, cb) => {
   }
 };
 
-module.exports = () =>
-  new FacebookStrategy(
-    {
-      clientID: process.env.FACEBOOK_CLIENT_ID,
-      clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
-      callbackURL: `${process.env.DOMAIN_SERVER}${process.env.FACEBOOK_CALLBACK_URL}`,
-      proxy: true,
-      scope: ['public_profile'],
-      profileFields: ['id', 'email', 'name'],
-    },
-    facebookLogin,
-  );
+const facebookStrategyOptions = {
+  clientID: process.env.FACEBOOK_CLIENT_ID,
+  clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+  callbackURL: `${process.env.DOMAIN_SERVER}${process.env.FACEBOOK_CALLBACK_URL}`,
+  proxy: true,
+  scope: ['public_profile'],
+  profileFields: ['id', 'email', 'name'],
+};
+
+const facebookStrategy = new FacebookStrategy(
+  facebookStrategyOptions,
+  facebookLogin,
+);
+
+module.exports = facebookStrategy;
+
