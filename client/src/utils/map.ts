@@ -1,23 +1,17 @@
 import type { TFile, Assistant } from 'librechat-data-provider';
 
 /** Maps Files by `file_id` for quick lookup */
-export function mapFiles(files: TFile[]) {
-  const fileMap = {} as Record<string, TFile>;
-
-  for (const file of files) {
+export function mapFiles(files: TFile[]): Record<string, TFile> {
+  return files.reduce((fileMap, file) => {
     fileMap[file.file_id] = file;
-  }
-
-  return fileMap;
+    return fileMap;
+  }, {});
 }
 
 /** Maps Assistants by `id` for quick lookup */
-export function mapAssistants(assistants: Assistant[]) {
-  const assistantMap = {} as Record<string, Assistant>;
-
-  for (const assistant of assistants) {
+export function mapAssistants(assistants: Assistant[]): Record<string, Assistant> {
+  return assistants.reduce((assistantMap, assistant) => {
     assistantMap[assistant.id] = assistant;
-  }
-
-  return assistantMap;
+    return assistantMap;
+  }, {});
 }
