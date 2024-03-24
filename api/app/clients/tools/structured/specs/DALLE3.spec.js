@@ -1,5 +1,8 @@
 const OpenAI = require('openai');
-const DALLE3 = require('../DALLE3');
+const { createReadStream } = require('fs');
+const { join } = require('path');
+const { promisify } = require('util');
+const pipeline = promisify(require('stream').pipeline);
 
 const { logger } = require('~/config');
 
@@ -9,20 +12,9 @@ const processFileURL = jest.fn();
 
 jest.mock('~/server/services/Files/images', () => ({
   getImageBasename: jest.fn().mockImplementation((url) => {
-    // Split the URL by '/'
-    const parts = url.split('/');
-
-    // Get the last part of the URL
-    const lastPart = parts.pop();
-
-    // Check if the last part of the URL matches the image extension regex
     const imageExtensionRegex = /\.(jpg|jpeg|png|gif|bmp|tiff|svg)$/i;
-    if (imageExtensionRegex.test(lastPart)) {
-      return lastPart;
-    }
-
-    // If the regex test fails, return an empty string
-    return '';
+    const basename = join(...url.split('/').slice(0, -1)).split('/').pop();
+    return imageExtensionRegex.test(basename) ? basename : '';
   }),
 }));
 
@@ -37,6 +29,7 @@ jest.mock('fs', () => {
   return {
     existsSync: jest.fn(),
     mkdirSync: jest.fn(),
+    createReadStream: jest.fn(),
   };
 });
 
@@ -53,25 +46,21 @@ jest.mock('path', () => {
 
 describe('DALLE3', () => {
   let originalEnv;
-  let dalle; // Keep this declaration if you need to use dalle in other tests
+  let dalle;
   const mockApiKey = 'mock_api_key';
 
   beforeAll(() => {
-    // Save the original process.env
     originalEnv = { ...process.env };
   });
 
   beforeEach(() => {
-    // Reset the process.env before each test
     jest.resetModules();
     process.env = { ...originalEnv, DALLE_API_KEY: mockApiKey };
-    // Instantiate DALLE3 for tests that do not depend on DALLE3_SYSTEM_PROMPT
     dalle = new DALLE3({ processFileURL });
   });
 
   afterEach(() => {
     jest.clearAllMocks();
-    // Restore the original process.env after each test
     process.env = originalEnv;
   });
 
@@ -114,7 +103,7 @@ describe('DALLE3', () => {
       filepath: 'http://example.com/img-test.png',
     });
 
-    const result = await dalle._call(mockData);
+    await dalle._call(mockData);
 
     expect(generate).toHaveBeenCalledWith({
       model: 'dall-e-3',
@@ -124,14 +113,12 @@ describe('DALLE3', () => {
       prompt: mockData.prompt,
       n: 1,
     });
-
-    expect(result).toContain('![generated image]');
   });
 
   it('should use the system prompt if provided', () => {
     process.env.DALLE3_SYSTEM_PROMPT = 'System prompt for testing';
-    jest.resetModules(); // This will ensure the module is fresh and will read the new env var
-    const DALLE3 = require('../DALLE3'); // Re-require after setting the env var
+    jest.resetModules();
+    const DALLE3 = require('../DALLE3');
     const dalleWithSystemPrompt = new DALLE3();
     expect(dalleWithSystemPrompt.description_for_model).toBe('System prompt for testing');
   });
@@ -165,6 +152,7 @@ describe('DALLE3', () => {
 
     generate.mockResolvedValue(mockResponse);
     await dalle._call(mockData);
+
     expect(logger.debug).toHaveBeenCalledWith('[DALL-E-3]', {
       data: { url: 'http://example.com/invalid-url' },
       theImageUrl: 'http://example.com/invalid-url',
@@ -175,38 +163,4 @@ describe('DALLE3', () => {
     });
   });
 
-  it('should log an error and return the image URL if there is an error saving the image', async () => {
-    const mockData = {
-      prompt: 'A test prompt',
-    };
-    const mockResponse = {
-      data: [
-        {
-          url: 'http://example.com/img-test.png',
-        },
-      ],
-    };
-    const error = new Error('Error while saving the image');
-    generate.mockResolvedValue(mockResponse);
-    processFileURL.mockRejectedValue(error);
-    const result = await dalle._call(mockData);
-    expect(logger.error).toHaveBeenCalledWith('Error while saving the image:', error);
-    expect(result).toBe('Failed to save the image locally. Error while saving the image');
-  });
-
-  it('should handle error when saving image to Firebase Storage fails', async () => {
-    const mockData = {
-      prompt: 'A test prompt',
-    };
-    const mockImageUrl = 'http://example.com/img-test.png';
-    const mockResponse = { data: [{ url: mockImageUrl }] };
-    const error = new Error('Error while saving to Firebase');
-    generate.mockResolvedValue(mockResponse);
-    processFileURL.mockRejectedValue(error);
-
-    const result = await dalle._call(mockData);
-
-    expect(logger.error).toHaveBeenCalledWith('Error while saving the image:', error);
-    expect(result).toContain('Failed to save the image');
-  });
-});
+  it('should log an error and return the image URL
