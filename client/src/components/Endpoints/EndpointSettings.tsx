@@ -3,7 +3,7 @@ import { SettingsViews } from 'librechat-data-provider';
 import type { TSettingsProps } from '~/common';
 import { getSettings } from './Settings';
 import { cn } from '~/utils';
-import store from '~/store';
+import store, { ModelsConfig, CurrentSettingsView } from '~/store';
 
 export default function Settings({
   conversation,
@@ -12,21 +12,23 @@ export default function Settings({
   className = '',
   isMultiChat = false,
 }: TSettingsProps & { isMultiChat?: boolean }) {
-  const modelsConfig = useRecoilValue(store.modelsConfig);
-  const currentSettingsView = useRecoilValue(store.currentSettingsView);
+  const modelsConfig = useRecoilValue<ModelsConfig>(store.modelsConfig);
+  const currentSettingsView = useRecoilValue<CurrentSettingsView>(store.currentSettingsView);
+
   if (!conversation?.endpoint || currentSettingsView !== SettingsViews.default) {
     return null;
   }
 
-  const { settings, multiViewSettings } = getSettings(isMultiChat);
+  const { settings, multiViewSettings } = await getSettings(isMultiChat);
   const { endpoint: _endpoint, endpointType } = conversation;
-  const models = modelsConfig?.[_endpoint] ?? [];
   const endpoint = endpointType ?? _endpoint;
+  const models = modelsConfig?.[_endpoint] ?? [];
   const OptionComponent = settings[endpoint];
 
   if (OptionComponent) {
     return (
       <div
+        key={endpoint}
         className={cn('hide-scrollbar h-[500px] overflow-y-auto md:mb-2 md:h-[350px]', className)}
       >
         <OptionComponent
@@ -46,7 +48,10 @@ export default function Settings({
   }
 
   return (
-    <div className={cn('hide-scrollbar h-[500px] overflow-y-auto md:mb-2 md:h-[350px]', className)}>
+    <div
+      key={endpoint}
+      className={cn('hide-scrollbar h-[500px] overflow-y-auto md:mb-2 md:h-[350px]', className)}
+    >
       <MultiViewComponent conversation={conversation} models={models} isPreset={isPreset} />
     </div>
   );
