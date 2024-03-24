@@ -3,8 +3,10 @@ const getLogStores = require('./getLogStores');
 const { isEnabled, math, removePorts } = require('~/server/utils');
 const { logger } = require('~/config');
 
-const { BAN_VIOLATIONS, BAN_INTERVAL } = process.env ?? {};
-const interval = math(BAN_INTERVAL, 20);
+const { BAN_VIOLATIONS, BAN_INTERVAL, BAN_DURATION } = process.env;
+
+// Convert string value of BAN_INTERVAL to integer and set default value
+const interval = math(parseInt(BAN_INTERVAL, 10) || 20, 20);
 
 /**
  * Bans a user based on violation criteria.
@@ -13,7 +15,7 @@ const interval = math(BAN_INTERVAL, 20);
  * The duration of the ban is determined by the BAN_DURATION environment variable.
  * If BAN_DURATION is not set or invalid, the user will not be banned.
  * Sessions will be deleted and the refreshToken cookie will be cleared even with
- * an invalid or nill duration, which is a "soft" ban; the user can remain active until
+ * an invalid or null duration, which is a "soft" ban; the user can remain active until
  * access token expiry.
  *
  * @async
@@ -38,6 +40,7 @@ const banViolation = async (req, res, errorMessage) => {
 
   const { type, user_id, prev_count, violation_count } = errorMessage;
 
+  // Check if the user has crossed the threshold for ban
   const prevThreshold = Math.floor(prev_count / interval);
   const currentThreshold = Math.floor(violation_count / interval);
 
@@ -45,13 +48,16 @@ const banViolation = async (req, res, errorMessage) => {
     return;
   }
 
+  // Delete user sessions and clear refreshToken cookie
   await Session.deleteAllUserSessions(user_id);
   res.clearCookie('refreshToken');
 
   const banLogs = getLogStores('ban');
-  const duration = errorMessage.duration || banLogs.opts.ttl;
 
-  if (duration <= 0) {
+  // Calculate ban duration
+  let duration = errorMessage.duration || banLogs.opts.ttl;
+
+  if (duration <= 0 || !duration) {
     return;
   }
 
@@ -62,12 +68,14 @@ const banViolation = async (req, res, errorMessage) => {
     } minutes`,
   );
 
+  // Set ban logs with expiry time
   const expiresAt = Date.now() + duration;
   await banLogs.set(user_id, { type, violation_count, duration, expiresAt });
   if (req.ip) {
     await banLogs.set(req.ip, { type, user_id, violation_count, duration, expiresAt });
   }
 
+  // Set ban properties in errorMessage object
   errorMessage.ban = true;
   errorMessage.ban_duration = duration;
 
