@@ -4,13 +4,17 @@ import type { BatchFile, TFile } from 'librechat-data-provider';
 import { useDeleteFilesMutation } from '~/data-provider';
 import useFileDeletion from './useFileDeletion';
 
+export interface DeleteFilesContext {
+  filesToDeleteMap: Map<string, BatchFile>;
+}
+
 export default function useDeleteFilesFromTable(callback?: () => void) {
   const queryClient = useQueryClient();
-  const deletionMutation = useDeleteFilesMutation({
+  const deletionMutation = useDeleteFilesMutation<DeleteFilesContext>({
     onMutate: async (variables) => {
       const { files } = variables;
       if (!files?.length) {
-        return new Map<string, BatchFile>();
+        return { filesToDeleteMap: new Map() };
       }
 
       const filesToDeleteMap = files.reduce((map, file) => {
@@ -22,7 +26,7 @@ export default function useDeleteFilesFromTable(callback?: () => void) {
     },
     onSuccess: (data, variables, context) => {
       console.log('Files deleted');
-      const { filesToDeleteMap } = context as { filesToDeleteMap: Map<string, BatchFile> };
+      const { filesToDeleteMap } = context as DeleteFilesContext;
 
       queryClient.setQueryData([QueryKeys.files], (oldFiles: TFile[] | undefined) => {
         const { files } = variables;
@@ -38,5 +42,5 @@ export default function useDeleteFilesFromTable(callback?: () => void) {
     },
   });
 
-  return useFileDeletion({ mutateAsync: deletionMutation.mutateAsync });
+  return useFileDeletion<DeleteFilesContext>({ mutateAsync: deletionMutation.mutateAsync, context: deletionMutation.onMutate.bind(deletionMutation) });
 }
