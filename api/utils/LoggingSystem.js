@@ -1,8 +1,7 @@
 const logger = require('./logger');
+const { v4: uuidv4 } = require('uuid');
 
-// Sanitize outside the logger paths. This is useful for sanitizing variables directly with Regex and patterns.
 const redactPatterns = [
-  // Array of regular expressions for redacting patterns
   /api[-_]?key/i,
   /password/i,
   /token/i,
@@ -17,21 +16,30 @@ const redactPatterns = [
   /authorization[-_]?nonce/i,
 ];
 
-/*
-  // Example of redacting sensitive data from object class instances
-  function redactSensitiveData(obj) {
-    if (obj instanceof User) {
-      return {
-        ...obj.toObject(),
-        password: '***', // Redact the password field
-      };
+const sanitizeValue = (value, patterns) => {
+  for (const pattern of patterns) {
+    if (pattern.test(value)) {
+      return '***';
     }
+  }
+  return value;
+};
+
+const sanitizeObject = (obj, patterns) => {
+  if (typeof obj !== 'object' || obj === null) {
     return obj;
   }
 
-  // Example of redacting sensitive data from object class instances
-  logger.info({ newUser: redactSensitiveData(newUser) }, 'newUser');
-*/
+  if (Array.isArray(obj)) {
+    return obj.map((item) => sanitizeObject(item, patterns));
+  }
+
+  const newObj = {};
+  for (const [key, value] of Object.entries(obj)) {
+    newObj[key] = sanitizeValue(value, patterns);
+  }
+  return newObj;
+};
 
 const levels = {
   TRACE: 10,
@@ -48,82 +56,41 @@ module.exports = {
   levels,
   setLevel: (l) => (level = l),
   log: {
-    trace: (msg) => {
+    trace: (msg, obj) => {
       if (level <= levels.TRACE) {
         return;
       }
-      logger.trace(msg);
+      logger.trace({ id: uuidv4(), msg, ...sanitizeObject(obj, redactPatterns) });
     },
-    debug: (msg) => {
+    debug: (msg, obj) => {
       if (level <= levels.DEBUG) {
         return;
       }
-      logger.debug(msg);
+      logger.debug({ id: uuidv4(), msg, ...sanitizeObject(obj, redactPatterns) });
     },
-    info: (msg) => {
+    info: (msg, obj) => {
       if (level <= levels.INFO) {
         return;
       }
-      logger.info(msg);
+      logger.info({ id: uuidv4(), msg, ...sanitizeObject(obj, redactPatterns) });
     },
-    warn: (msg) => {
+    warn: (msg, obj) => {
       if (level <= levels.WARN) {
         return;
       }
-      logger.warn(msg);
+      logger.warn({ id: uuidv4(), msg, ...sanitizeObject(obj, redactPatterns) });
     },
-    error: (msg) => {
+    error: (msg, obj) => {
       if (level <= levels.ERROR) {
         return;
       }
-      logger.error(msg);
+      logger.error({ id: uuidv4(), msg, ...sanitizeObject(obj, redactPatterns) });
     },
-    fatal: (msg) => {
+    fatal: (msg, obj) => {
       if (level <= levels.FATAL) {
         return;
       }
-      logger.fatal(msg);
-    },
-
-    // Custom loggers
-    parameters: (parameters) => {
-      if (level <= levels.TRACE) {
-        return;
-      }
-      logger.debug({ parameters }, 'Function Parameters');
-    },
-    functionName: (name) => {
-      if (level <= levels.TRACE) {
-        return;
-      }
-      logger.debug(`EXECUTING: ${name}`);
-    },
-    flow: (flow) => {
-      if (level <= levels.INFO) {
-        return;
-      }
-      logger.debug(`BEGIN FLOW: ${flow}`);
-    },
-    variable: ({ name, value }) => {
-      if (level <= levels.DEBUG) {
-        return;
-      }
-      // Check if the variable name matches any of the redact patterns and redact the value
-      let sanitizedValue = value;
-      for (const pattern of redactPatterns) {
-        if (pattern.test(name)) {
-          sanitizedValue = '***';
-          break;
-        }
-      }
-      logger.debug({ variable: { name, value: sanitizedValue } }, `VARIABLE ${name}`);
-    },
-    request: () => (req, res, next) => {
-      if (level < levels.DEBUG) {
-        return next();
-      }
-      logger.debug({ query: req.query, body: req.body }, `Hit URL ${req.url} with following`);
-      return next();
+      logger.fatal({ id: uuidv4(), msg, ...sanitizeObject(obj, redactPatterns) });
     },
   },
 };
