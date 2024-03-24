@@ -8,26 +8,30 @@ import { useMultiSearch } from './MultiSearch';
 
 type SelectDropDownProps = {
   id?: string;
-  title?: string;
+  label?: string;
   value: string | null | Option;
   disabled?: boolean;
-  setValue: (value: string) => void;
-  availableValues: string[] | Option[];
-  emptyTitle?: boolean;
+  onChange: (value: string) => void;
+  options: string[] | Option[];
+  emptyLabel?: boolean;
   showAbove?: boolean;
   showLabel?: boolean;
   iconSide?: 'left' | 'right';
-  renderOption?: () => React.ReactNode;
+  renderOption?: (option: string | Option) => React.ReactNode;
 };
 
 function SelectDropDownPop({
-  title: _title,
+  id,
+  label,
   value,
-  availableValues,
-  setValue,
+  disabled,
+  onChange,
+  options,
+  emptyLabel = false,
   showAbove = false,
   showLabel = true,
-  emptyTitle = false,
+  iconSide = 'right',
+  renderOption,
 }: SelectDropDownProps) {
   const localize = useLocalize();
   const transitionProps = { className: 'top-full mt-3' };
@@ -35,23 +39,23 @@ function SelectDropDownPop({
     transitionProps.className = 'bottom-full mb-3';
   }
 
-  let title = _title;
+  let displayedLabel = label;
 
-  if (emptyTitle) {
-    title = '';
-  } else if (!title) {
-    title = localize('com_ui_model');
+  if (emptyLabel) {
+    displayedLabel = '';
+  } else if (!label) {
+    displayedLabel = localize('com_ui_model');
   }
 
-  // Detemine if we should to convert this component into a searchable select.  If we have enough elements, a search
+  // Determine if we should convert this component into a searchable select.  If we have enough elements, a search
   // input will appear near the top of the menu, allowing correct filtering of different model menu items. This will
   // reset once the component is unmounted (as per a normal search)
-  const [filteredValues, searchRender] = useMultiSearch<string[] | Option[]>(availableValues);
+  const [filteredOptions, searchRender] = useMultiSearch<string[] | Option[]>(options);
   const hasSearchRender = Boolean(searchRender);
-  const options = hasSearchRender ? filteredValues : availableValues;
+  const displayedOptions = hasSearchRender ? filteredOptions : options;
 
   return (
-    <Root>
+    <Root id={id}>
       <div className={'flex items-center justify-center gap-2 '}>
         <div className={'relative w-full'}>
           <Trigger asChild>
@@ -60,11 +64,12 @@ function SelectDropDownPop({
               className={cn(
                 'pointer-cursor relative flex flex-col rounded-md border border-black/10 bg-white py-2 pl-3 pr-10 text-left focus:outline-none focus:ring-0 focus:ring-offset-0 dark:border-gray-700 dark:bg-gray-800 sm:text-sm',
                 'hover:bg-gray-50 radix-state-open:bg-gray-50 dark:hover:bg-gray-700 dark:radix-state-open:bg-gray-700',
+                disabled && 'opacity-50 cursor-not-allowed',
               )}
+              disabled={disabled}
             >
-              {' '}
               {showLabel && (
-                <label className="block text-xs text-gray-700 dark:text-gray-500 ">{title}</label>
+                <label className="block text-xs text-gray-700 dark:text-gray-500 ">{displayedLabel}</label>
               )}
               <span className="inline-flex w-full ">
                 <span
@@ -74,8 +79,8 @@ function SelectDropDownPop({
                     'min-w-[75px] font-normal',
                   )}
                 >
-                  {/* {!showLabel && !emptyTitle && (
-                    <span className="text-xs text-gray-700 dark:text-gray-500">{title}:</span>
+                  {/* {!showLabel && !emptyLabel && (
+                    <span className="text-xs text-gray-700 dark:text-gray-500">{displayedLabel}:</span>
                   )} */}
                   {typeof value !== 'string' && value ? value?.label ?? '' : value ?? ''}
                 </span>
@@ -109,15 +114,17 @@ function SelectDropDownPop({
               )}
             >
               {searchRender}
-              {options.map((option) => {
+              {displayedOptions.map((option) => {
                 return (
                   <MenuItem
                     key={option}
                     title={option}
                     value={option}
                     selected={!!(value && value === option)}
-                    onClick={() => setValue(option)}
-                  />
+                    onClick={() => onChange(option)}
+                  >
+                    {renderOption?.(option)}
+                  </MenuItem>
                 );
               })}
             </Content>
