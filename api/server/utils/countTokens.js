@@ -1,7 +1,12 @@
 const { Tiktoken } = require('tiktoken/lite');
-const p50k_base = require('tiktoken/encoders/p50k_base.json');
-const cl100k_base = require('tiktoken/encoders/cl100k_base.json');
-const logger = require('~/config/winston');
+const p50kBase = require('tiktoken/encoders/p50k_base.json');
+const cl100kBase = require('tiktoken/encoders/cl100k_base.json');
+const winston = require('winston');
+
+const logger = winston.createLogger({
+  level: 'error',
+  transports: [new winston.transports.Console()],
+});
 
 /**
  * Counts the number of tokens in a given text using a specified encoding model.
@@ -20,7 +25,8 @@ const logger = require('~/config/winston');
 const countTokens = async (text = '', modelName = 'gpt-3.5-turbo') => {
   let encoder = null;
   try {
-    const model = modelName.includes('text-davinci-003') ? p50k_base : cl100k_base;
+    const model =
+      modelName === 'text-davinci-003' ? p50kBase : cl100kBase;
     encoder = new Tiktoken(model.bpe_ranks, model.special_tokens, model.pat_str);
     const tokens = encoder.encode(text);
     encoder.free();
