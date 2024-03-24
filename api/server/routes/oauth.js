@@ -27,6 +27,14 @@ const oauthHandler = async (req, res) => {
   }
 };
 
+const authHandler = async (req, res, next) => {
+  try {
+    await oauthHandler(req, res);
+  } catch (error) {
+    next(error);
+  }
+};
+
 /**
  * Google Routes
  */
@@ -44,9 +52,8 @@ router.get(
     failureRedirect: `${domains.client}/login`,
     failureMessage: true,
     session: false,
-    scope: ['openid', 'profile', 'email'],
   }),
-  oauthHandler,
+  authHandler,
 );
 
 router.get(
@@ -64,10 +71,9 @@ router.get(
     failureRedirect: `${domains.client}/login`,
     failureMessage: true,
     session: false,
-    scope: ['public_profile'],
     profileFields: ['id', 'email', 'name'],
   }),
-  oauthHandler,
+  authHandler,
 );
 
 router.get(
@@ -84,7 +90,7 @@ router.get(
     failureMessage: true,
     session: false,
   }),
-  oauthHandler,
+  authHandler,
 );
 
 router.get(
@@ -103,8 +109,9 @@ router.get(
     session: false,
     scope: ['user:email', 'read:user'],
   }),
-  oauthHandler,
+  authHandler,
 );
+
 router.get(
   '/discord',
   passport.authenticate('discord', {
@@ -121,7 +128,7 @@ router.get(
     session: false,
     scope: ['identify', 'email'],
   }),
-  oauthHandler,
+  authHandler,
 );
 
 module.exports = router;
