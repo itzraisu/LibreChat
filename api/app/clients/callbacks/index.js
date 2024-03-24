@@ -1,4 +1,4 @@
-const createStartHandler = require('./createStartHandler');
+const { createStartHandler } = require('./createStartHandler');
 
 module.exports = {
   createStartHandler,
