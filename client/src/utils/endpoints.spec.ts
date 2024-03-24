@@ -39,12 +39,9 @@ describe('getEndpointField', () => {
 
   it('returns undefined for a valid endpoint but an invalid property', () => {
     /* Type assertion as 'nonexistentProperty' is intentionally not a valid property of TConfig */
+    const invalidProperty = 'nonexistentProperty' as keyof TConfig;
     expect(
-      getEndpointField(
-        mockEndpointsConfig,
-        EModelEndpoint.openAI,
-        'nonexistentProperty' as keyof TConfig,
-      ),
+      getEndpointField(mockEndpointsConfig, EModelEndpoint.openAI, invalidProperty),
     ).toBeUndefined();
   });
 
@@ -53,9 +50,8 @@ describe('getEndpointField', () => {
   });
 
   it('returns undefined for a non-enum endpoint with an invalid property', () => {
-    expect(
-      getEndpointField(mockEndpointsConfig, 'Mistral', 'nonexistentProperty' as keyof TConfig),
-    ).toBeUndefined();
+    const invalidProperty = 'nonexistentProperty' as keyof TConfig;
+    expect(getEndpointField(mockEndpointsConfig, 'Mistral', invalidProperty)).toBeUndefined();
   });
 });
 
