@@ -9,7 +9,13 @@ const getCustomConfig = require('./getCustomConfig');
  * @param {Express.Request} req - The Express request object.
  */
 async function loadConfigModels(req) {
-  const customConfig = await getCustomConfig();
+  let customConfig;
+  try {
+    customConfig = await getCustomConfig();
+  } catch (error) {
+    console.error('Error fetching custom config:', error);
+    return {};
+  }
 
   if (!customConfig) {
     return {};
@@ -17,19 +23,20 @@ async function loadConfigModels(req) {
 
   const { endpoints = {} } = customConfig ?? {};
   const modelsConfig = {};
+
   const azureEndpoint = endpoints[EModelEndpoint.azureOpenAI];
-  const azureConfig = req.app.locals[EModelEndpoint.azureOpenAI];
-  const { modelNames } = azureConfig ?? {};
+  const azureConfig = req.app.locals[EModelEndpoint.azureOpenAI] || {};
 
-  if (modelNames && azureEndpoint) {
-    modelsConfig[EModelEndpoint.azureOpenAI] = modelNames;
+  if (azureEndpoint && azureConfig.modelNames) {
+    modelsConfig[EModelEndpoint.azureOpenAI] = azureConfig.modelNames;
+    modelsConfig[EModelEndpoint.gptPlugins] = azureConfig.modelNames;
   }
 
-  if (modelNames && azureEndpoint && azureEndpoint.plugins) {
-    modelsConfig[EModelEndpoint.gptPlugins] = modelNames;
-  }
-
-  if (azureEndpoint?.assistants && azureConfig.assistantModels) {
+  if (
+    azureEndpoint?.assistants &&
+    azureConfig.assistantModels &&
+    Array.isArray(azureConfig.assistantModels)
+  ) {
     modelsConfig[EModelEndpoint.assistants] = azureConfig.assistantModels;
   }
 
@@ -46,11 +53,10 @@ async function loadConfigModels(req) {
       (endpoint.models.fetch || endpoint.models.default),
   );
 
-  const fetchPromisesMap = {}; // Map for promises keyed by unique combination of baseURL and apiKey
-  const uniqueKeyToNameMap = {}; // Map to associate unique keys with endpoint names
+  const fetchPromisesMap = {};
+  const uniqueKeyToNameMap = {};
 
-  for (let i = 0; i < customEndpoints.length; i++) {
-    const endpoint = customEndpoints[i];
+  for (const endpoint of customEndpoints) {
     const { models, name, baseURL, apiKey } = endpoint;
 
     const API_KEY = extractEnvVariable(apiKey);
@@ -80,16 +86,19 @@ async function loadConfigModels(req) {
     }
   }
 
-  const fetchedData = await Promise.all(Object.values(fetchPromisesMap));
-  const uniqueKeys = Object.keys(fetchPromisesMap);
+  const fetchedDataPromises = Object.values(fetchPromisesMap);
 
-  for (let i = 0; i < fetchedData.length; i++) {
-    const currentKey = uniqueKeys[i];
-    const modelData = fetchedData[i];
-    const associatedNames = uniqueKeyToNameMap[currentKey];
+  const fetchedData = await Promise.allSettled(fetchedDataPromises);
 
-    for (const name of associatedNames) {
-      modelsConfig[name] = modelData;
+  for (const [index, result] of Object.entries(fetchedData)) {
+    if (result.status === 'fulfilled') {
+      const modelData = result.value;
+      const currentKey = Object.entries(fetchPromisesMap)[index][0];
+      const associatedNames = uniqueKeyToNameMap[currentKey];
+
+      for (const name of associatedNames) {
+        modelsConfig[name] = modelData;
+      }
     }
   }
 
