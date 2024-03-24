@@ -37,54 +37,22 @@ const getUserPluginAuthValue = async (userId, authField) => {
   }
 };
 
-// const updateUserPluginAuth = async (userId, authField, pluginKey, value) => {
-//   try {
-//     const encryptedValue = encrypt(value);
-
-//     const pluginAuth = await PluginAuth.findOneAndUpdate(
-//       { userId, authField },
-//       {
-//         $set: {
-//           value: encryptedValue,
-//           pluginKey
-//         }
-//       },
-//       {
-//         new: true,
-//         upsert: true
-//       }
-//     );
-
-//     return pluginAuth;
-//   } catch (err) {
-//     logger.error('[getUserPluginAuthValue]', err);
-//     return err;
-//   }
-// };
-
 const updateUserPluginAuth = async (userId, authField, pluginKey, value) => {
   try {
     const encryptedValue = encrypt(value);
-    const pluginAuth = await PluginAuth.findOne({ userId, authField }).lean();
-    if (pluginAuth) {
-      const pluginAuth = await PluginAuth.updateOne(
-        { userId, authField },
-        { $set: { value: encryptedValue } },
-      );
-      return pluginAuth;
-    } else {
-      const newPluginAuth = await new PluginAuth({
-        userId,
-        authField,
-        value: encryptedValue,
-        pluginKey,
-      });
-      await newPluginAuth.save();
-      return newPluginAuth;
+    const update = { value: encryptedValue };
+
+    if (pluginKey) {
+      update.pluginKey = pluginKey;
     }
+
+    const options = { new: true, upsert: true };
+    const pluginAuth = await PluginAuth.findOneAndUpdate({ userId, authField }, update, options).lean();
+
+    return pluginAuth;
   } catch (err) {
     logger.error('[updateUserPluginAuth]', err);
-    return err;
+    throw err;
   }
 };
 
@@ -93,7 +61,7 @@ const deleteUserPluginAuth = async (userId, authField) => {
     return await PluginAuth.deleteOne({ userId, authField });
   } catch (err) {
     logger.error('[deleteUserPluginAuth]', err);
-    return err;
+    throw err;
   }
 };
 
