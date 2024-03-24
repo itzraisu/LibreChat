@@ -1,4 +1,5 @@
 module.exports = {
+  root: true,
   env: {
     browser: true,
     es2021: true,
@@ -6,7 +7,7 @@ module.exports = {
     commonjs: true,
     es6: true,
   },
-  extends: ['prettier'],
+  extends: ['prettier', 'plugin:react/recommended', 'plugin:@typescript-eslint/recommended'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 'latest',
@@ -15,7 +16,7 @@ module.exports = {
       jsx: true,
     },
   },
-  plugins: ['react', 'react-hooks', '@typescript-eslint'],
+  plugins: ['react', 'react-hooks', '@typescript-eslint', 'prettier'],
   rules: {
     'react/react-in-jsx-scope': 'off',
     indent: ['error', 2, { SwitchCase: 1 }],
@@ -31,21 +32,20 @@ module.exports = {
     'linebreak-style': 0,
     // 'arrow-parens': [2, 'as-needed', { requireForBlockBody: true }],
     // 'no-plusplus': ['error', { allowForLoopAfterthoughts: true }],
-    'no-console': 'off',
+    'no-console': 'warn',
     'import/extensions': 'off',
     'no-promise-executor-return': 'off',
     'no-param-reassign': 'off',
     'no-continue': 'off',
     'no-restricted-syntax': 'off',
-    'react/prop-types': ['off'],
-    'react/display-name': ['off'],
+    'react/prop-types': 'off',
+    'react/display-name': 'off',
   },
   overrides: [
     {
-      files: ['**/*.ts', '**/*.tsx, **/*.js, **/*.jsx'],
+      files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
       rules: {
         'no-unused-vars': 'off', // off because it conflicts with '@typescript-eslint/no-unused-vars'
-        'react/display-name': 'off',
         '@typescript-eslint/no-unused-vars': 'warn',
       },
     },
