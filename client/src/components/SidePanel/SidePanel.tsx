@@ -13,7 +13,6 @@ import NavToggle from '~/components/Nav/NavToggle';
 import PanelSwitch from './Builder/PanelSwitch';
 import FilesPanel from './Files/Panel';
 import Switcher from './Switcher';
-import { cn } from '~/utils';
 import Nav from './Nav';
 
 interface SidePanelProps {
@@ -24,6 +23,60 @@ interface SidePanelProps {
 }
 
 const defaultMinSize = 20;
+
+const NavToggleWithResize = ({
+  navVisible,
+  isHovering,
+  onToggle,
+  setIsHovering,
+  className,
+  translateX,
+  side,
+}: {
+  navVisible: boolean;
+  isHovering: boolean;
+  onToggle: () => void;
+  setIsHovering: (value: boolean) => void;
+  className?: string;
+  translateX?: boolean;
+  side?: 'left' | 'right';
+}) => {
+  return (
+    <TooltipProvider delayDuration={0}>
+      <Tooltip>
+        <div
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+          className={cn(
+            'fixed top-1/2',
+            side === 'right' ? 'mr-16' : 'ml-16',
+            translateX ? 'translate-x-full' : '',
+          )}
+        >
+          <NavToggle
+            navVisible={navVisible}
+            isHovering={isHovering}
+            onToggle={onToggle}
+            setIsHovering={setIsHovering}
+            className={cn('', className)}
+            translateX={translateX}
+            side={side}
+          />
+        </div>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+const ResizableHandleWithHandle = ({
+  className,
+}: {
+  className?: string;
+}) => {
+  return (
+    <ResizableHandleAlt withHandle className={cn('bg-transparent dark:text-white', className)} />
+  );
+};
 
 export default function SidePanel({
   defaultLayout = [97, 3],
@@ -82,133 +135,4 @@ export default function SidePanel({
   useEffect(() => {
     if (isSmallScreen) {
       setIsCollapsed(true);
-      setMinSize(0);
-      setCollapsedSize(0);
-      panelRef.current?.collapse();
-      return;
-    }
-  }, [isSmallScreen]);
 
-  const toggleNavVisible = () => {
-    if (newUser) {
-      setNewUser(false);
-    }
-    setIsCollapsed((prev: boolean) => {
-      if (!prev) {
-        setMinSize(0);
-        setCollapsedSize(0);
-      } else {
-        setMinSize(defaultMinSize);
-        setCollapsedSize(3);
-      }
-      return !prev;
-    });
-    if (!isCollapsed) {
-      panelRef.current?.collapse();
-    } else {
-      panelRef.current?.expand();
-    }
-  };
-
-  const assistants = endpointsConfig?.[EModelEndpoint.assistants];
-  const userProvidesKey = !!assistants?.userProvide;
-  const keyProvided = userProvidesKey ? !!keyExpiry?.expiresAt : true;
-
-  return (
-    <>
-      <TooltipProvider delayDuration={0}>
-        <ResizablePanelGroup
-          direction="horizontal"
-          onLayout={(sizes: number[]) => throttledSaveLayout(sizes)}
-          className="transition-width relative h-full w-full flex-1 overflow-auto bg-white dark:bg-gray-800"
-        >
-          <ResizablePanel defaultSize={defaultLayout[0]} minSize={30}>
-            {children}
-          </ResizablePanel>
-          <TooltipProvider delayDuration={400}>
-            <Tooltip>
-              <div
-                onMouseEnter={() => setIsHovering(true)}
-                onMouseLeave={() => setIsHovering(false)}
-                className="relative flex w-px items-center justify-center"
-              >
-                <NavToggle
-                  navVisible={!isCollapsed}
-                  isHovering={isHovering}
-                  onToggle={toggleNavVisible}
-                  setIsHovering={setIsHovering}
-                  className={cn(
-                    'fixed top-1/2',
-                    isCollapsed && (minSize === 0 || collapsedSize === 0) ? 'mr-9' : 'mr-16',
-                  )}
-                  translateX={false}
-                  side="right"
-                />
-              </div>
-            </Tooltip>
-          </TooltipProvider>
-          {(!isCollapsed || minSize > 0) && (
-            <ResizableHandleAlt withHandle className="bg-transparent dark:text-white" />
-          )}
-          <ResizablePanel
-            collapsedSize={collapsedSize}
-            defaultSize={defaultLayout[1]}
-            collapsible={true}
-            minSize={minSize}
-            maxSize={40}
-            ref={panelRef}
-            style={{
-              overflowY: 'auto',
-              visibility:
-                isCollapsed && (minSize === 0 || collapsedSize === 0) ? 'hidden' : 'visible',
-              transition: 'width 0.2s ease',
-            }}
-            onExpand={() => {
-              setIsCollapsed(false);
-              localStorage.setItem('react-resizable-panels:collapsed', 'false');
-            }}
-            onCollapse={() => {
-              setIsCollapsed(true);
-              localStorage.setItem('react-resizable-panels:collapsed', 'true');
-            }}
-            className={cn(
-              'sidenav hide-scrollbar border-l border-gray-200 bg-white dark:border-gray-800/50 dark:bg-gray-850',
-              isCollapsed ? 'min-w-[50px]' : 'min-w-[340px] sm:min-w-[352px]',
-              minSize === 0 ? 'min-w-0' : '',
-            )}
-          >
-            {keyProvided && (
-              <div
-                className={cn(
-                  'sticky left-0 right-0 top-0 z-[100] flex h-[52px] flex-wrap items-center justify-center bg-white dark:bg-gray-850',
-                  isCollapsed ? 'h-[52px]' : 'px-2',
-                )}
-              >
-                <Switcher isCollapsed={isCollapsed} />
-                <Separator className="bg-gray-100/50 dark:bg-gray-600" />
-              </div>
-            )}
-
-            <Nav
-              resize={panelRef.current?.resize}
-              isCollapsed={isCollapsed}
-              defaultActive={defaultActive}
-              links={Links}
-            />
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </TooltipProvider>
-      <div
-        className={`nav-mask${!isCollapsed ? ' active' : ''}`}
-        onClick={() => {
-          setIsCollapsed(() => {
-            setCollapsedSize(0);
-            setMinSize(0);
-            return false;
-          });
-          panelRef.current?.collapse();
-        }}
-      />
-    </>
-  );
-}
