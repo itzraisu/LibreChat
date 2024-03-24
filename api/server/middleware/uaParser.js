@@ -17,15 +17,23 @@ const { logViolation } = require('../../cache');
  * app.use(uaParser);
  */
 async function uaParser(req, res, next) {
-  const { NON_BROWSER_VIOLATION_SCORE: score = 20 } = process.env;
+  const { NON_BROWSER_VIOLATION_SCORE = 20 } = process.env;
+
+  if (typeof NON_BROWSER_VIOLATION_SCORE !== 'number') {
+    console.error('Invalid NON_BROWSER_VIOLATION_SCORE value:', process.env.NON_BROWSER_VIOLATION_SCORE);
+    return handleError(res, { message: 'Internal server error' });
+  }
+
   const ua = uap(req.headers['user-agent']);
 
   if (!ua.browser.name) {
     const type = 'non_browser';
-    await logViolation(req, res, type, { type }, score);
-    return handleError(res, { message: 'Illegal request' });
-  }
-  next();
-}
 
-module.exports = uaParser;
+    try {
+      await logViolation(req, res, type, { type }, NON_BROWSER_VIOLATION_SCORE);
+    } catch (error) {
+      console.error('Failed to log violation:', error);
+      return handleError(res, { message: 'Internal server error' });
+    }
+
+    return handleError
