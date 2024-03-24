@@ -11,6 +11,10 @@
  * - Numbers are wrapped in float_val or int_val depending on whether they are floating-point or integers.
  */
 function formatGoogleInputs(obj) {
+  if (typeof obj !== 'object' || obj === null) {
+    throw new Error('Input must be an object');
+  }
+
   const formattedObj = {};
 
   for (const key in obj) {
@@ -29,14 +33,15 @@ function formatGoogleInputs(obj) {
       else if (typeof value === 'number') {
         formattedObj[key] = Number.isInteger(value) ? { int_val: value } : { float_val: value };
       }
-      // Handle other types (e.g., strings)
+      // Handle strings
+      else if (typeof value === 'string') {
+        formattedObj[key] = { string_val: value };
+      }
+      // Handle other types (e.g., booleans)
       else {
-        formattedObj[key] = { string_val: [value] };
+        throw new Error(`Unsupported type: ${typeof value}`);
       }
     }
   }
 
-  return { struct_val: formattedObj };
-}
-
-module.exports = formatGoogleInputs;
+  return { struct_val: formattedObj
