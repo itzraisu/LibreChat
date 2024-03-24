@@ -1,12 +1,24 @@
-const { z } = require('zod');
-const axios = require('axios');
-const { StructuredTool } = require('langchain/tools');
-const { PromptTemplate } = require('langchain/prompts');
-// const { ChatOpenAI } = require('langchain/chat_models/openai');
-const { createExtractionChainFromZod } = require('./extractionChain');
-const { logger } = require('~/config');
+import { z } from 'zod';
+import axios from 'axios';
+import { StructuredTool } from 'langchain/tools';
+import { PromptTemplate } from 'langchain/prompts';
+import { createExtractionChainFromZod } from './extractionChain';
+import { logger } from '~/config';
 
-const envs = ['Nodejs', 'Go', 'Bash', 'Rust', 'Python3', 'PHP', 'Java', 'Perl', 'DotNET'];
+const envs = [
+  'Nodejs',
+  'Go',
+  'Bash',
+  'Rust',
+  'Python3',
+  'PHP',
+  'Java',
+  'Perl',
+  'DotNET',
+] as const;
+
+type Env = typeof envs[number];
+
 const env = z.enum(envs);
 
 const template = `Extract the correct environment for the following code.
@@ -17,22 +29,13 @@ Code:
 {input}
 `;
 
-const prompt = PromptTemplate.fromTemplate(template);
-
-// const schema = {
-//   type: 'object',
-//   properties: {
-//     env: { type: 'string' },
-//   },
-//   required: ['env'],
-// };
+const prompt = new PromptTemplate({ template });
 
 const zodSchema = z.object({
   env: z.string(),
 });
 
-async function extractEnvFromCode(code, model) {
-  // const chatModel = new ChatOpenAI({ openAIApiKey, modelName: 'gpt-4-0613', temperature: 0 });
+async function extractEnvFromCode(code: string, model: any) {
   const chain = createExtractionChainFromZod(zodSchema, model, { prompt, verbose: true });
   const result = await chain.run(code);
   logger.debug('<--------------- extractEnvFromCode --------------->');
@@ -54,7 +57,7 @@ const headers = {
 };
 
 class RunCommand extends StructuredTool {
-  constructor(fields) {
+  constructor(fields: any) {
     super();
     this.name = 'RunCommand';
     this.url = fields.E2B_SERVER_URL || getServerURL();
@@ -69,7 +72,7 @@ class RunCommand extends StructuredTool {
     });
   }
 
-  async _call(data) {
+  async _call(data: any) {
     logger.debug(`<--------------- Running ${data} --------------->`);
     const response = await axios({
       url: `${this.url}/commands`,
@@ -82,7 +85,7 @@ class RunCommand extends StructuredTool {
 }
 
 class ReadFile extends StructuredTool {
-  constructor(fields) {
+  constructor(fields: any) {
     super();
     this.name = 'ReadFile';
     this.url = fields.E2B_SERVER_URL || getServerURL();
@@ -96,7 +99,7 @@ class ReadFile extends StructuredTool {
     });
   }
 
-  async _call(data) {
+  async _call(data: any) {
     logger.debug(`<--------------- Reading ${data} --------------->`);
     const response = await axios.get(`${this.url}/files`, { params: data, headers: this.headers });
     return response.data;
@@ -104,7 +107,7 @@ class ReadFile extends StructuredTool {
 }
 
 class WriteFile extends StructuredTool {
-  constructor(fields) {
+  constructor(fields: any) {
     super();
     this.name = 'WriteFile';
     this.url = fields.E2B_SERVER_URL || getServerURL();
@@ -120,15 +123,15 @@ class WriteFile extends StructuredTool {
     });
   }
 
-  async _call(data) {
+  async _call(data: any) {
     let { env, path, content } = data;
     logger.debug(`<--------------- environment ${env} typeof ${typeof env}--------------->`);
-    if (env && !envs.includes(env)) {
+
+    if (!env) {
+      env = await extractEnvFromCode(content, this.model);
+    } else if (env && !envs.includes(env)) {
       logger.debug(`<--------------- Invalid environment ${env} --------------->`);
-      env = await extractEnvFromCode(content, this.model);
-    } else if (!env) {
-      logger.debug('<--------------- Undefined environment --------------->');
-      env = await extractEnvFromCode(content, this.model);
+      throw new Error(`Invalid environment: ${env}`);
     }
 
     const payload = {
@@ -151,5 +154,3 @@ class WriteFile extends StructuredTool {
     return `Successfully written to ${path} in ${env}`;
   }
 }
-
-module.exports = [RunCommand, ReadFile, WriteFile];
