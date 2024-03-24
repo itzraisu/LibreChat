@@ -1,9 +1,20 @@
-**/.circleci
-**/.editorconfig
-**/.dockerignore
-**/.git
-**/.DS_Store
-**/.vscode
+# CircleCI and EditorConfig configuration files
+.circleci
+.editorconfig
+
+# Docker configuration files
+.dockerignore
+
+# Git configuration files
+.git
+
+# macOS specific files
+.DS_Store
+
+# Visual Studio Code configuration files
+.vscode
+
+# Node modules
 **/node_modules
 
 # Specific patterns to ignore
@@ -15,3 +26,12 @@ docs
 
 # Ignore all hidden files
 .*
+
+# Ignore all generated files and directories
+# (e.g., npm-debug.log, coverage, dist, build)
+# Add any additional patterns as needed
+coverage
+**/.nyc_output
+npm-debug.log
+dist
+build
