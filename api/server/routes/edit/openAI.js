@@ -11,8 +11,10 @@ const {
 } = require('~/server/middleware');
 
 const router = express.Router();
+
+// Apply middleware functions to the router
 router.use(moderateText);
-router.post('/abort', handleAbort());
+router.post('/abort', handleAbort);
 
 router.post(
   '/',
@@ -21,8 +23,16 @@ router.post(
   buildEndpointOption,
   setHeaders,
   async (req, res, next) => {
-    await EditController(req, res, next, initializeClient);
+    try {
+      // Initialize the client before passing it to the controller
+      const client = initializeClient();
+      await EditController(req, res, next, client);
+    } catch (error) {
+      // Handle any errors that occur during initialization
+      next(error);
+    }
   },
 );
 
 module.exports = router;
+
