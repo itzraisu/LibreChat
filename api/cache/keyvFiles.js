@@ -1,9 +1,19 @@
 const { KeyvFile } = require('keyv-file');
 
-const logFile = new KeyvFile({ filename: './data/logs.json' });
-const pendingReqFile = new KeyvFile({ filename: './data/pendingReqCache.json' });
-const violationFile = new KeyvFile({ filename: './data/violations.json' });
+// Define a constant for the directory where the data files are stored
+const DATA_DIR = './data';
 
+// Define a function to create a KeyvFile instance for a given filename
+const createKeyvFile = (filename) => {
+  return new KeyvFile({ filename: `${DATA_DIR}/${filename}.json` });
+};
+
+// Create KeyvFile instances for each of the data files
+const logFile = createKeyvFile('logs');
+const pendingReqFile = createKeyvFile('pendingReqCache');
+const violationFile = createKeyvFile('violations');
+
+// Export the KeyvFile instances as an object
 module.exports = {
   logFile,
   pendingReqFile,
