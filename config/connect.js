@@ -1,38 +1,23 @@
 const path = require('path');
-
-require('module-alias/register');
-const moduleAlias = require('module-alias');
+const { connectDb } = require('../lib/db/connectDb');
 
 const basePath = path.resolve(__dirname, '..', 'api');
-moduleAlias.addAlias('~', basePath);
-
-const connectDb = require('~/lib/db/connectDb');
 
 async function connect() {
-  /**
-   * Connect to the database
-   * - If it takes a while, we'll warn the user
-   */
-  let timeout = setTimeout(() => {
-    console.orange(
-      'This is taking a while... You may need to check your connection if this fails.',
-    );
-    timeout = setTimeout(() => {
-      console.orange('Still going... Might as well assume the connection failed...');
-      timeout = setTimeout(() => {
-        console.orange('Error incoming in 3... 2... 1...');
-      }, 13000);
-    }, 10000);
-  }, 5000);
   // Attempt to connect to the database
   try {
-    console.orange('Warming up the engines...');
+    console.log('Warming up the engines...');
     await connectDb();
-    clearTimeout(timeout);
+    console.log('Connected to the database.');
   } catch (e) {
-    console.error(e);
+    console.error('Error connecting to the database:', e);
+    console.error('Exiting the process...');
     process.exit(1);
   }
 }
 
+// Use the --experimental-specifier-resolution=node flag instead of module-alias
 module.exports = connect;
+
+
+node --experimental-specifier-resolution=node your-script.js
