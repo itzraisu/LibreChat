@@ -2,10 +2,44 @@ const express = require('express');
 const { defaultSocialLogins } = require('librechat-data-provider');
 const { isEnabled } = require('~/server/utils');
 const { logger } = require('~/config');
+const dotenvFlow = require('dotenv-flow');
 
 const router = express.Router();
 const emailLoginEnabled =
-  process.env.ALLOW_EMAIL_LOGIN === undefined || isEnabled(process.env.ALLOW_EMAIL_LOGIN);
+  (process.env.ALLOW_EMAIL_LOGIN === 'true' || process.env.ALLOW_EMAIL_LOGIN === undefined) && isEnabled(process.env.ALLOW_EMAIL_LOGIN);
+
+// Load environment variables from .env file
+dotenvFlow.config();
+
+// Validate social login environment variables
+const isValidClientId = (str) => /^[a-zA-Z0-9-._~]+$/.test(str);
+const isValidClientSecret = (str) => /^[a-zA-Z0-9-._~]{40}$/.test(str);
+const validateSocialLoginEnv = () => {
+  if (process.env.DISCORD_CLIENT_ID && !isValidClientId(process.env.DISCORD_CLIENT_ID)) {
+    throw new Error('Invalid DISCORD_CLIENT_ID');
+  }
+  if (process.env.DISCORD_CLIENT_SECRET && !isValidClientSecret(process.env.DISCORD_CLIENT_SECRET)) {
+    throw new Error('Invalid DISCORD_CLIENT_SECRET');
+  }
+  if (process.env.FACEBOOK_CLIENT_ID && !isValidClientId(process.env.FACEBOOK_CLIENT_ID)) {
+    throw new Error('Invalid FACEBOOK_CLIENT_ID');
+  }
+  if (process.env.FACEBOOK_CLIENT_SECRET && !isValidClientSecret(process.env.FACEBOOK_CLIENT_SECRET)) {
+    throw new Error('Invalid FACEBOOK_CLIENT_SECRET');
+  }
+  if (process.env.GITHUB_CLIENT_ID && !isValidClientId(process.env.GITHUB_CLIENT_ID)) {
+    throw new Error('Invalid GITHUB_CLIENT_ID');
+  }
+  if (process.env.GITHUB_CLIENT_SECRET && !isValidClientSecret(process.env.GITHUB_CLIENT_SECRET)) {
+    throw new Error('Invalid GITHUB_CLIENT_SECRET');
+  }
+  if (process.env.GOOGLE_CLIENT_ID && !isValidClientId(process.env.GOOGLE_CLIENT_ID)) {
+    throw new Error('Invalid GOOGLE_CLIENT_ID');
+  }
+  if (process.env.GOOGLE_CLIENT_SECRET && !isValidClientSecret(process.env.GOOGLE_CLIENT_SECRET)) {
+    throw new Error('Invalid GOOGLE_CLIENT_SECRET');
+  }
+};
 
 router.get('/', async function (req, res) {
   const isBirthday = () => {
@@ -14,48 +48,8 @@ router.get('/', async function (req, res) {
   };
 
   try {
+    validateSocialLoginEnv();
+
     const payload = {
       appTitle: process.env.APP_TITLE || 'LibreChat',
-      socialLogins: req.app.locals.socialLogins ?? defaultSocialLogins,
-      discordLoginEnabled: !!process.env.DISCORD_CLIENT_ID && !!process.env.DISCORD_CLIENT_SECRET,
-      facebookLoginEnabled:
-        !!process.env.FACEBOOK_CLIENT_ID && !!process.env.FACEBOOK_CLIENT_SECRET,
-      githubLoginEnabled: !!process.env.GITHUB_CLIENT_ID && !!process.env.GITHUB_CLIENT_SECRET,
-      googleLoginEnabled: !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET,
-      openidLoginEnabled:
-        !!process.env.OPENID_CLIENT_ID &&
-        !!process.env.OPENID_CLIENT_SECRET &&
-        !!process.env.OPENID_ISSUER &&
-        !!process.env.OPENID_SESSION_SECRET,
-      openidLabel: process.env.OPENID_BUTTON_LABEL || 'Continue with OpenID',
-      openidImageUrl: process.env.OPENID_IMAGE_URL,
-      serverDomain: process.env.DOMAIN_SERVER || 'http://localhost:3080',
-      emailLoginEnabled,
-      registrationEnabled: isEnabled(process.env.ALLOW_REGISTRATION),
-      socialLoginEnabled: isEnabled(process.env.ALLOW_SOCIAL_LOGIN),
-      emailEnabled:
-        (!!process.env.EMAIL_SERVICE || !!process.env.EMAIL_HOST) &&
-        !!process.env.EMAIL_USERNAME &&
-        !!process.env.EMAIL_PASSWORD &&
-        !!process.env.EMAIL_FROM,
-      checkBalance: isEnabled(process.env.CHECK_BALANCE),
-      showBirthdayIcon:
-        isBirthday() ||
-        isEnabled(process.env.SHOW_BIRTHDAY_ICON) ||
-        process.env.SHOW_BIRTHDAY_ICON === '',
-      helpAndFaqURL: process.env.HELP_AND_FAQ_URL || 'https://librechat.ai',
-      interface: req.app.locals.interface,
-    };
-
-    if (typeof process.env.CUSTOM_FOOTER === 'string') {
-      payload.customFooter = process.env.CUSTOM_FOOTER;
-    }
-
-    return res.status(200).send(payload);
-  } catch (err) {
-    logger.error('Error in startup config', err);
-    return res.status(500).send({ error: err.message });
-  }
-});
-
-module.exports = router;
+      socialLogins: Array.isArray(req.app.locals.
