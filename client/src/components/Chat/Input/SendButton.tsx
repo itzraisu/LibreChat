@@ -6,13 +6,13 @@ import { SendIcon } from '~/components/svg';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
-type SendButtonProps = {
+type SubmitButtonProps = {
   disabled: boolean;
-  control: Control<{ text: string }>;
+  'data-testid'?: string;
 };
 
 const SubmitButton = React.memo(
-  forwardRef((props: { disabled: boolean }, ref: React.ForwardedRef<HTMLButtonElement>) => {
+  forwardRef<HTMLButtonElement, SubmitButtonProps>(({ disabled, 'data-testid': dataTestId }, ref) => {
     const localize = useLocalize();
     return (
       <TooltipProvider delayDuration={250}>
@@ -20,11 +20,11 @@ const SubmitButton = React.memo(
           <TooltipTrigger asChild>
             <button
               ref={ref}
-              disabled={props.disabled}
+              disabled={disabled}
               className={cn(
-                'absolute bottom-1.5 right-2 rounded-lg border border-black p-0.5 text-white transition-colors enabled:bg-black disabled:bg-black disabled:text-gray-400 disabled:opacity-10 dark:border-white dark:bg-white dark:disabled:bg-white md:bottom-3 md:right-3',
+                'absolute bottom-1.5 right-2 rounded border p-0.5 transition-colors enabled:bg-black disabled:bg-black disabled:text-gray-400 disabled:opacity-10 dark:border-white dark:bg-white dark:disabled:bg-white md:bottom-3 md:right-3',
               )}
-              data-testid="send-button"
+              data-testid={dataTestId}
               type="submit"
             >
               <span className="" data-state="closed">
@@ -32,7 +32,7 @@ const SubmitButton = React.memo(
               </span>
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={10}>
+          <TooltipContent side="top" sideOffset={10} title={localize('com_nav_send_message')}>
             {localize('com_nav_send_message')}
           </TooltipContent>
         </Tooltip>
@@ -41,11 +41,15 @@ const SubmitButton = React.memo(
   }),
 );
 
+type SendButtonProps = {
+  control: Control<{ text: string }>;
+};
+
 const SendButton = React.memo(
-  forwardRef((props: SendButtonProps, ref: React.ForwardedRef<HTMLButtonElement>) => {
-    const data = useWatch({ control: props.control });
-    return <SubmitButton ref={ref} disabled={props.disabled || !data?.text} />;
+  forwardRef<HTMLButtonElement, SendButtonProps>(({ control }, ref) => {
+    const data = useWatch({ control });
+    return <SubmitButton ref={ref} disabled={!data?.text} data-testid="send-button" />;
   }),
 );
 
-export default SendButton;
+export default SendButton
