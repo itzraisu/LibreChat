@@ -1,13 +1,17 @@
 import React from 'react';
 import { useRecoilState } from 'recoil';
-import * as Tabs from '@radix-ui/react-tabs';
 import { SettingsTabValues } from 'librechat-data-provider';
 import { Switch } from '~/components/ui';
 import { useLocalize } from '~/hooks';
 import Avatar from './Avatar';
-import store from '~/store';
+import { useTabs } from '@radix-ui/react-tabs';
+import { store } from '~/store';
 
-function Account({ onCheckedChange }: { onCheckedChange?: (value: boolean) => void }) {
+type AccountProps = {
+  onCheckedChange?: (value: boolean) => void;
+};
+
+const Account: React.FC<AccountProps> = ({ onCheckedChange }) => {
   const [UsernameDisplay, setUsernameDisplay] = useRecoilState<boolean>(store.UsernameDisplay);
   const localize = useLocalize();
 
@@ -18,30 +22,21 @@ function Account({ onCheckedChange }: { onCheckedChange?: (value: boolean) => vo
     }
   };
 
+  const { onValueChange } = useTabs();
+
   return (
     <Tabs.Content
       value={SettingsTabValues.ACCOUNT}
-      role="tabpanel"
-      className="w-full md:min-h-[300px]"
+      data-testid="account-tab-content"
+      aria-label={localize('com_nav_user_settings_account')}
+      onValueChange={onValueChange}
     >
-      <div className="flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-50">
-        <div className="border-b pb-3 last-of-type:border-b-0 dark:border-gray-700">
-          <Avatar />
-        </div>
-        <div className="flex items-center justify-between">
-          <div> {localize('com_nav_user_name_display')} </div>
-          <Switch
-            id="UsernameDisplay"
-            checked={UsernameDisplay}
-            onCheckedChange={handleCheckedChange}
-            className="ml-4 mt-2"
-            data-testid="UsernameDisplay"
-          />
-        </div>
-      </div>
-      <div className="border-b pb-3 last-of-type:border-b-0 dark:border-gray-700"></div>
-    </Tabs.Content>
-  );
-}
-
-export default React.memo(Account);
+      <Avatar alt={localize('com_nav_user_name_display')} />
+      <Switch
+        id="UsernameDisplay"
+        name="UsernameDisplay"
+        checked={UsernameDisplay}
+        onCheckedChange={handleCheckedChange}
+        className="ml-4 mt-2"
+        defaultChecked={UsernameDisplay}
+        data-testid="Username
