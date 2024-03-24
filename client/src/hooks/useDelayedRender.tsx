@@ -1,14 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, DependencyList } from 'react';
 import type { ReactNode } from 'react';
 
-const useDelayedRender = (delay: number) => {
-  const [delayed, setDelayed] = useState(true);
+/**
+ * A hook that delays the rendering of a component by a specified amount of time.
+ * Useful for preventing flickering or flashing of components during fast updates.
+ * @param delay The number of milliseconds to delay the rendering.
+ * @returns A function that takes a component function and renders it after the delay.
+ */
+const useRenderDelay = (delay: number) => {
+  const [shouldRender, setShouldRender] = useState(true);
+
+  // Only run the effect on updates, not on the initial render
   useEffect(() => {
-    const timeout = setTimeout(() => setDelayed(false), delay);
-    return () => clearTimeout(timeout);
+    let timeout: NodeJS.Timeout;
+    if (shouldRender) {
+      timeout = setTimeout(() => setShouldRender(false), delay);
+    }
+    return () => {
+      clearTimeout(timeout);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return (fn: () => ReactNode) => !delayed && fn();
+  }, [shouldRender] as DependencyList);
+
+  return (fn: () => ReactNode) => shouldRender && fn();
 };
 
-export default useDelayedRender;
+export default useRenderDelay;
