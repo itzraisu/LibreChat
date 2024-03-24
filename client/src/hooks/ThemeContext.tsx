@@ -1,13 +1,15 @@
-//ThemeContext.js
+// ThemeContext.tsx
 // source: https://plainenglish.io/blog/light-and-dark-mode-in-react-web-application-with-tailwind-css-89674496b942
 
 import React, { createContext, useState, useEffect } from 'react';
 
+type Theme = 'light' | 'dark' | 'system';
+
 const getInitialTheme = () => {
   if (typeof window !== 'undefined' && window.localStorage) {
     const storedPrefs = window.localStorage.getItem('color-theme');
-    if (typeof storedPrefs === 'string') {
-      return storedPrefs;
+    if (storedPrefs) {
+      return storedPrefs as Theme;
     }
 
     const userMedia = window.matchMedia('(prefers-color-scheme: dark)');
@@ -16,12 +18,12 @@ const getInitialTheme = () => {
     }
   }
 
-  return 'light'; // light theme as the default;
+  return 'system'; // system theme as the default;
 };
 
 type ProviderValue = {
-  theme: string;
-  setTheme: React.Dispatch<React.SetStateAction<string>>;
+  theme: Theme;
+  setTheme: React.Dispatch<React.SetStateAction<Theme>>;
 };
 
 const defaultContextValue: ProviderValue = {
@@ -32,10 +34,19 @@ const defaultContextValue: ProviderValue = {
 };
 export const ThemeContext = createContext<ProviderValue>(defaultContextValue);
 
-export const ThemeProvider = ({ initialTheme, children }) => {
+export const ThemeProvider = ({ initialTheme, children }: { initialTheme?: Theme }) => {
   const [theme, setTheme] = useState(getInitialTheme);
 
-  const rawSetTheme = (rawTheme: string) => {
+  const rawSetTheme = (rawTheme: Theme) => {
+    if (theme === rawTheme) {
+      return;
+    }
+
+    const validThemes = ['light', 'dark', 'system'] as const;
+    if (!validThemes.includes(rawTheme)) {
+      return;
+    }
+
     const root = window.document.documentElement;
     let isDark = rawTheme === 'dark';
 
@@ -70,5 +81,4 @@ export const ThemeProvider = ({ initialTheme, children }) => {
     rawSetTheme(theme);
   }, [theme]);
 
-  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
-};
+  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}
