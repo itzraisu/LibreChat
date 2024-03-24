@@ -3,19 +3,21 @@ import { createAvatar } from '@dicebear/core';
 import { initials } from '@dicebear/collection';
 import type { TUser } from 'librechat-data-provider';
 
-const useAvatar = (user: TUser | undefined) => {
-  const [avatarSrc, setAvatarSrc] = useState('');
+type UseAvatarResult = string | undefined;
+
+const useAvatar = (user: TUser | undefined): UseAvatarResult => {
+  const [avatarSrc, setAvatarSrc] = useState<UseAvatarResult>(() => {
+    if (user?.avatar) {
+      return user.avatar;
+    }
+    if (!user?.username) {
+      return undefined;
+    }
+    return '';
+  });
 
   useEffect(() => {
-    if (avatarSrc.length) {
-      return;
-    }
-
-    if (user?.avatar) {
-      return;
-    }
-
-    if (!user?.username) {
+    if (avatarSrc || !user?.username) {
       return;
     }
 
@@ -42,7 +44,7 @@ const useAvatar = (user: TUser | undefined) => {
     };
 
     generateAvatar();
-  }, [user, avatarSrc.length]);
+  }, [user, avatarSrc]);
 
   return avatarSrc;
 };
