@@ -1,5 +1,6 @@
+import '@testing-library/jest-dom/extend-expect';
 import 'test/matchMedia.mock';
-import { render, screen } from 'test/layout-test-utils';
+import { render, screen, waitFor, fireEvent } from 'test/layout-test-utils';
 import userEvent from '@testing-library/user-event';
 import { TPlugin } from 'librechat-data-provider';
 import PluginStoreItem from '../PluginStoreItem';
@@ -11,6 +12,14 @@ const mockPlugin = {
 };
 
 describe('PluginStoreItem', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
   it('renders the plugin name and description', () => {
     render(
       <PluginStoreItem
@@ -38,8 +47,9 @@ describe('PluginStoreItem', () => {
         }}
       />,
     );
-    await userEvent.click(screen.getByText('Install'));
-    expect(onInstall).toHaveBeenCalled();
+    const installButton = screen.getByText('Install');
+    fireEvent.click(installButton);
+    await waitFor(() => expect(onInstall).toHaveBeenCalled());
   });
 
   it('calls onUninstall when the uninstall button is clicked', async () => {
@@ -54,7 +64,4 @@ describe('PluginStoreItem', () => {
         isInstalled
       />,
     );
-    await userEvent.click(screen.getByText('Uninstall'));
-    expect(onUninstall).toHaveBeenCalled();
-  });
-});
+    const
