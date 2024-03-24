@@ -1,6 +1,6 @@
 const getLogStores = require('./getLogStores');
 const { isEnabled } = require('../server/utils');
-const { USE_REDIS, LIMIT_CONCURRENT_MESSAGES } = process.env ?? {};
+const { USE_REDIS, LIMIT_CONCURRENT_MESSAGES } = process.env || {};
 const ttl = 1000 * 60 * 1;
 
 /**
@@ -22,27 +22,32 @@ const ttl = 1000 * 60 * 1;
  * @returns {Promise<void>} A promise that either decrements the 'pendingRequests' count, deletes the key from the store, or resolves with no value.
  */
 const clearPendingReq = async ({ userId, cache: _cache }) => {
-  if (!userId) {
+  if (typeof userId !== 'string') {
     return;
-  } else if (!isEnabled(LIMIT_CONCURRENT_MESSAGES)) {
+  } else if (!isEnabled(Boolean(LIMIT_CONCURRENT_MESSAGES))) {
     return;
   }
 
   const namespace = 'pending_req';
-  const cache = _cache ?? getLogStores(namespace);
+  const cache = _cache || getLogStores(namespace);
 
   if (!cache) {
     return;
   }
 
-  const key = `${USE_REDIS ? namespace : ''}:${userId ?? ''}`;
-  const currentReq = +((await cache.get(key)) ?? 0);
+  const key = `${Boolean(USE_REDIS) ? namespace : ''}:${userId}`;
 
-  if (currentReq && currentReq >= 1) {
-    await cache.set(key, currentReq - 1, ttl);
-  } else {
-    await cache.delete(key);
+  try {
+    const currentReq = +((await cache.get(key)) || 0);
+
+    if (currentReq && currentReq >= 1) {
+      await cache.set(key, currentReq - 1, ttl);
+    } else {
+      await cache.delete(key);
+    }
+  } catch (error) {
+    console.error(`Error in clearPendingReq: ${error}`);
   }
 };
 
-module.exports = clearPendingReq;
+module
