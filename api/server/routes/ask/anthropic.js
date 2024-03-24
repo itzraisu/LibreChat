@@ -11,7 +11,8 @@ const {
 
 const router = express.Router();
 
-router.post('/abort', handleAbort());
+// Use handleAbort as a middleware function, not calling it directly
+router.post('/abort', handleAbort);
 
 router.post(
   '/',
@@ -20,8 +21,14 @@ router.post(
   buildEndpointOption,
   setHeaders,
   async (req, res, next) => {
-    await AskController(req, res, next, initializeClient, addTitle);
+    try {
+      await AskController(req, res, initializeClient, addTitle);
+    } catch (error) {
+      next(error);
+    }
   },
 );
 
-module.exports = router;
+// Export the router as an object, not a function
+module.exports = { router };
+
