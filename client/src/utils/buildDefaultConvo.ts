@@ -2,21 +2,22 @@ import { parseConvo } from 'librechat-data-provider';
 import getLocalStorageItems from './getLocalStorageItems';
 import type { TConversation, EModelEndpoint } from 'librechat-data-provider';
 
+type BuildDefaultConvoProps = {
+  conversation: TConversation;
+  endpoint?: EModelEndpoint;
+  models: string[];
+  lastConversationSetup?: TConversation | undefined;
+};
+
 const buildDefaultConvo = ({
   conversation,
   endpoint,
   models,
   lastConversationSetup,
-}: {
-  conversation: TConversation;
-  endpoint: EModelEndpoint;
-  models: string[];
-  // TODO: fix this type as we should allow undefined
-  lastConversationSetup: TConversation;
-}) => {
+}: BuildDefaultConvoProps): TConversation => {
   const { lastSelectedModel, lastSelectedTools, lastBingSettings } = getLocalStorageItems();
-  const { jailbreak, toneStyle } = lastBingSettings;
-  const endpointType = lastConversationSetup?.endpointType ?? conversation?.endpointType;
+  const { jailbreak, toneStyle } = lastBingSettings || {};
+  const endpointType = (lastConversationSetup?.endpointType || conversation?.endpointType) as EModelEndpoint;
 
   if (!endpoint) {
     return {
@@ -26,26 +27,18 @@ const buildDefaultConvo = ({
     };
   }
 
-  const availableModels = models;
-  const model = lastConversationSetup?.model ?? lastSelectedModel?.[endpoint];
+  const possibleModels = models.includes(lastConversationSetup?.model || lastSelectedModel?.[endpoint] || '')
+    ? [lastConversationSetup?.model || lastSelectedModel?.[endpoint], ...models]
+    : models;
+
   const secondaryModel =
     endpoint === 'gptPlugins'
-      ? lastConversationSetup?.agentOptions?.model ?? lastSelectedModel?.secondaryModel
+      ? lastConversationSetup?.agentOptions?.model || lastSelectedModel?.secondaryModel
       : null;
 
-  let possibleModels: string[], secondaryModels: string[];
-
-  if (availableModels.includes(model)) {
-    possibleModels = [model, ...availableModels];
-  } else {
-    possibleModels = [...availableModels];
-  }
-
-  if (secondaryModel && availableModels.includes(secondaryModel)) {
-    secondaryModels = [secondaryModel, ...availableModels];
-  } else {
-    secondaryModels = [...availableModels];
-  }
+  const secondaryModels = secondaryModel && models.includes(secondaryModel)
+    ? [secondaryModel, ...models]
+    : models;
 
   const convo = parseConvo({
     endpoint,
@@ -62,11 +55,10 @@ const buildDefaultConvo = ({
     ...convo,
     endpointType,
     endpoint,
+    tools: lastSelectedTools ?? conversation.tools,
+    jailbreak: jailbreak ?? conversation.jailbreak,
+    toneStyle: toneStyle ?? conversation.toneStyle,
   };
-
-  defaultConvo.tools = lastSelectedTools ?? defaultConvo.tools;
-  defaultConvo.jailbreak = jailbreak ?? defaultConvo.jailbreak;
-  defaultConvo.toneStyle = toneStyle ?? defaultConvo.toneStyle;
 
   return defaultConvo;
 };
