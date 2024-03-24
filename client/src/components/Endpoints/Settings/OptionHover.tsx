@@ -17,7 +17,7 @@ const openAI = {
   pres: 'com_endpoint_openai_pres',
   resend: 'com_endpoint_openai_resend_files',
   detail: 'com_endpoint_openai_detail',
-};
+} as const;
 
 const types = {
   anthropic: {
@@ -40,23 +40,15 @@ const types = {
     skip: 'com_endpoint_skip_hover',
     ...openAI,
   },
-};
+} as const;
+
+function isKeyInObject<T extends object, K extends keyof T>(obj: T, key: K): key is K {
+  return key in obj;
+}
 
 function OptionHover({ endpoint, type, side }: TOptionHoverProps) {
   const localize = useLocalize();
-  const text = types?.[endpoint]?.[type];
-  if (!text) {
+  if (!isKeyInObject(types, endpoint)) {
     return null;
   }
-  return (
-    <HoverCardPortal>
-      <HoverCardContent side={side} className="z-[999] w-80">
-        <div className="space-y-2">
-          <p className="text-sm text-gray-600 dark:text-gray-300">{localize(text)}</p>
-        </div>
-      </HoverCardContent>
-    </HoverCardPortal>
-  );
-}
-
-export default OptionHover;
+  const typeObj = types
