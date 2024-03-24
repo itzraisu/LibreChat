@@ -1,41 +1,45 @@
 import { TMessage } from 'librechat-data-provider';
-import { atom, selector } from 'recoil';
+import { atom, selector, useRecoilState, useSetRecoilState } from 'recoil';
 import { buildTree } from '~/utils';
 
-const isSearchEnabled = atom<boolean | null>({
-  key: 'isSearchEnabled',
-  default: null,
+export type SearchState = {
+  isSearchEnabled: boolean | null;
+  searchQuery: string;
+  searchResultMessages: TMessage[] | null;
+};
+
+const searchStateAtom = atom<SearchState>({
+  key: 'searchState',
+  default: {
+    isSearchEnabled: null,
+    searchQuery: '',
+    searchResultMessages: null,
+  },
 });
 
-const searchQuery = atom({
-  key: 'searchQuery',
-  default: '',
-});
-
-const searchResultMessages = atom<TMessage[] | null>({
-  key: 'searchResultMessages',
-  default: null,
-});
-
-const searchResultMessagesTree = selector({
+const searchResultMessagesTreeSelector = selector<TMessage[]>({
   key: 'searchResultMessagesTree',
   get: ({ get }) => {
-    return buildTree({ messages: get(searchResultMessages), groupAll: true });
+    const searchState = get(searchStateAtom);
+    return buildTree({ messages: searchState.searchResultMessages, groupAll: true });
   },
 });
 
-const isSearching = selector({
-  key: 'isSearching',
-  get: ({ get }) => {
-    const data = get(searchQuery);
-    return !!data;
-  },
-});
+export const useSearch = () => {
+  const [searchState, setSearchState] = useRecoilState(searchStateAtom);
 
-export default {
-  isSearchEnabled,
-  isSearching,
-  searchResultMessages,
-  searchResultMessagesTree,
-  searchQuery,
-};
+  const setIsSearchEnabled = (isSearchEnabled: boolean | null) => {
+    setSearchState((prevState) => ({ ...prevState, isSearchEnabled }));
+  };
+
+  const setSearchQuery = (searchQuery: string) => {
+    setSearchState((prevState) => ({ ...prevState, searchQuery }));
+  };
+
+  const setSearchResultMessages = (searchResultMessages: TMessage[] | null) => {
+    setSearchState((prevState) => ({ ...prevState, searchResultMessages }));
+  };
+
+  return {
+    isSearchEnabled: searchState.isSearchEnabled,
+    searchQuery: search
