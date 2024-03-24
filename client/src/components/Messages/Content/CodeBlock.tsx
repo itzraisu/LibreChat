@@ -1,84 +1,99 @@
 import copy from 'copy-to-clipboard';
-import { InfoIcon } from 'lucide-react';
-import React, { useRef, useState, RefObject } from 'react';
-import Clipboard from '~/components/svg/Clipboard';
-import CheckMark from '~/components/svg/CheckMark';
-import cn from '~/utils/cn';
+import { InformationCircleIcon } from '@heroicons/react/outline';
+import { CheckIcon } from '@heroicons/react/solid';
+import cn from 'classnames';
+import React, { useRef, useState } from 'react';
 
 type CodeBarProps = {
   lang: string;
-  codeRef: RefObject<HTMLElement>;
-  plugin?: boolean;
-  error?: boolean;
+  isPlugin?: boolean;
+  isError?: boolean;
 };
 
-type CodeBlockProps = Pick<CodeBarProps, 'lang' | 'plugin' | 'error'> & {
-  codeChildren: React.ReactNode;
-  classProp?: string;
+type CodeBlockProps = CodeBarProps & {
+  children: React.ReactNode;
+  className?: string;
 };
 
-const CodeBar: React.FC<CodeBarProps> = React.memo(({ lang, codeRef, error, plugin = null }) => {
+const CodeBar: React.FC<CodeBarProps> = ({ lang, isPlugin, isError, children }) => {
   const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = async () => {
+    const codeString = children.current?.textContent;
+    if (codeString) {
+      setIsCopied(true);
+      copy(codeString);
+
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 3000);
+    }
+  };
+
   return (
-    <div className="relative flex items-center rounded-tl-md rounded-tr-md bg-gray-700 px-4 py-2 font-sans text-xs text-gray-200 dark:bg-gray-700">
+    <div
+      className={cn(
+        'flex items-center rounded-tl-md rounded-tr-md bg-gray-700 px-4 py-2 font-sans text-xs text-gray-200 dark:bg-gray-700',
+        {
+          'justify-between': !isPlugin && !isError,
+          'justify-end': isPlugin || isError,
+        },
+      )}
+    >
       <span className="">{lang}</span>
-      {plugin ? (
-        <InfoIcon className="ml-auto flex h-4 w-4 gap-2 text-white/50" />
+      {isPlugin || isError ? (
+        children
       ) : (
         <button
-          className={cn('ml-auto flex gap-2', error ? 'h-4 w-4 items-start text-white/50' : '')}
-          onClick={async () => {
-            const codeString = codeRef.current?.textContent;
-            if (codeString) {
-              setIsCopied(true);
-              copy(codeString);
-
-              setTimeout(() => {
-                setIsCopied(false);
-              }, 3000);
-            }
-          }}
+          className="ml-auto flex gap-2 text-white/50"
+          onClick={handleCopy}
         >
           {isCopied ? (
             <>
-              <CheckMark />
-              {error ? '' : 'Copied!'}
+              <CheckIcon className="h-4 w-4" />
+              {isError ? '' : 'Copied!'}
             </>
           ) : (
             <>
-              <Clipboard />
-              {error ? '' : 'Copy code'}
+              <InformationCircleIcon className="h-4 w-4" />
+              {isError ? '' : 'Copy code'}
             </>
           )}
         </button>
       )}
     </div>
   );
-});
+};
 
 const CodeBlock: React.FC<CodeBlockProps> = ({
   lang,
-  codeChildren,
-  classProp = '',
-  plugin = null,
-  error,
+  children,
+  className,
+  isPlugin,
+  isError,
 }) => {
-  const codeRef = useRef<HTMLElement>(null);
-  const language = plugin || error ? 'json' : lang;
+  const language = isPlugin || isError ? 'json' : lang;
+  const codeRef = useRef<HTMLPreElement>(null);
 
   return (
-    <div className="w-full rounded-md bg-gray-900 text-xs text-white/80">
-      <CodeBar lang={lang} codeRef={codeRef} plugin={!!plugin} error={error} />
-      <div className={cn(classProp, 'overflow-y-auto p-4')}>
-        <code
-          ref={codeRef}
-          className={cn(
-            plugin || error ? '!whitespace-pre-wrap' : `hljs language-${language} !whitespace-pre`,
-          )}
-        >
-          {codeChildren}
-        </code>
-      </div>
+    <div
+      className={cn(
+        'w-full rounded-md bg-gray-900 text-xs text-white/80',
+        className,
+      )}
+    >
+      <CodeBar lang={lang} isPlugin={isPlugin} isError={isError}>
+        {children}
+      </CodeBar>
+      <pre
+        ref={codeRef}
+        className={cn(
+          isPlugin || isError ? '!whitespace-pre-wrap' : `language-${language} !whitespace-pre`,
+          'overflow-y-auto p-4',
+        )}
+      >
+        {children}
+      </pre>
     </div>
   );
 };
