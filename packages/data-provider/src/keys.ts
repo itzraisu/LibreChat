@@ -1,37 +1,58 @@
+/**
+ * Enums for query keys
+ */
 export enum QueryKeys {
-  messages = 'messages',
-  allConversations = 'allConversations',
-  searchConversations = 'searchConversations',
-  conversation = 'conversation',
-  searchEnabled = 'searchEnabled',
-  user = 'user',
-  name = 'name', // user key name
-  models = 'models',
-  balance = 'balance',
-  endpoints = 'endpoints',
-  presets = 'presets',
-  searchResults = 'searchResults',
-  tokenCount = 'tokenCount',
-  availablePlugins = 'availablePlugins',
-  startupConfig = 'startupConfig',
-  assistants = 'assistants',
-  assistant = 'assistant',
-  endpointsConfigOverride = 'endpointsConfigOverride',
-  files = 'files',
-  fileConfig = 'fileConfig',
-  tools = 'tools',
-  actions = 'actions',
-  assistantDocs = 'assistantDocs',
+  // Conversations
+  MESSAGES = 'messages',
+  ALL_CONVERSATIONS = 'allConversations',
+  SEARCH_CONVERSATIONS = 'searchConversations',
+  CONVERSATION = 'conversation',
+  SEARCH_ENABLED = 'searchEnabled',
+
+  // User
+  USER = 'user',
+  NAME = 'name', // user key name
+
+  // Models
+  MODELS = 'models',
+  BALANCE = 'balance',
+  ENDPOINTS = 'endpoints',
+  PRESETS = 'presets',
+  SEARCH_RESULTS = 'searchResults',
+  TOKEN_COUNT = 'tokenCount',
+  AVAILABLE_PLUGINS = 'availablePlugins',
+  STARTUP_CONFIG = 'startupConfig',
+
+  // Assistants
+  ASSISTANTS = 'assistants',
+  ASSISTANT = 'assistant',
+  ENDPOINTS_CONFIG_OVERRIDE = 'endpointsConfigOverride',
+
+  // Files
+  FILES = 'files',
+  FILE_CONFIG = 'fileConfig',
+
+  // Tools
+  TOOLS = 'tools',
+
+  // Actions
+  ACTIONS = 'actions',
+
+  // Assistant Docs
+  ASSISTANT_DOCS = 'assistantDocs',
 }
 
+/**
+ * Enums for mutation keys
+ */
 export enum MutationKeys {
-  fileUpload = 'fileUpload',
-  fileDelete = 'fileDelete',
-  updatePreset = 'updatePreset',
-  deletePreset = 'deletePreset',
-  logoutUser = 'logoutUser',
-  avatarUpload = 'avatarUpload',
-  assistantAvatarUpload = 'assistantAvatarUpload',
-  updateAction = 'updateAction',
-  deleteAction = 'deleteAction',
+  FILE_UPLOAD = 'fileUpload',
+  FILE_DELETE = 'fileDelete',
+  UPDATE_PRESET = 'updatePreset',
+  DELETE_PRESET = 'deletePreset',
+  LOGOUT_USER = 'logoutUser',
+  AVATAR_UPLOAD = 'avatarUpload',
+  ASSISTANT_AVATAR_UPLOAD = 'assistantAvatarUpload',
+  UPDATE_ACTION = 'updateAction',
+  DELETE_ACTION = 'deleteAction',
 }
