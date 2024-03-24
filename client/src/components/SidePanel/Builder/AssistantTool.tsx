@@ -1,6 +1,7 @@
+import React from 'react';
 import type { TPlugin } from 'librechat-data-provider';
 import GearIcon from '~/components/svg/GearIcon';
-import { cn } from '~/utils';
+import cn from '~/utils';
 
 export default function AssistantTool({
   tool,
@@ -27,9 +28,14 @@ export default function AssistantTool({
       >
         {currentTool.icon && (
           <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full">
-            <div
-              className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-center bg-no-repeat dark:bg-white/20"
-              style={{ backgroundImage: `url(${currentTool.icon})`, backgroundSize: 'cover' }}
+            <img
+              className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full"
+              src={currentTool.icon}
+              alt={currentTool.name}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = '/path/to/default-icon';
+              }}
             />
           </div>
         )}
