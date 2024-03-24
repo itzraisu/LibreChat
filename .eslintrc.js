@@ -1,4 +1,5 @@
 module.exports = {
+  root: true,
   env: {
     browser: true,
     es2021: true,
@@ -31,6 +32,7 @@ module.exports = {
     ecmaFeatures: {
       jsx: true,
     },
+    trailingComma: 'es5',
   },
   plugins: ['react', 'react-hooks', '@typescript-eslint', 'import'],
   rules: {
@@ -67,6 +69,10 @@ module.exports = {
     'react/display-name': ['off'],
     'no-unused-vars': ['error', { varsIgnorePattern: '^_' }],
     quotes: ['error', 'single'],
+    '@typescript-eslint/no-empty-function': 'off',
+    '@typescript-eslint/no-var-requires': 'off',
+    'import/no-unresolved': 'off',
+    'import/order': ['error', {'groups': [['builtin', 'external', 'internal'], ['parent', 'sibling', 'index']], 'newlines-between': 'always'}],
   },
   overrides: [
     {
@@ -106,57 +112,4 @@ module.exports = {
       },
     },
     {
-      files: ['**/*.ts', '**/*.tsx'],
-      parser: '@typescript-eslint/parser',
-      parserOptions: {
-        project: './client/tsconfig.json',
-      },
-      plugins: ['@typescript-eslint/eslint-plugin', 'jest'],
-      extends: [
-        'plugin:@typescript-eslint/eslint-recommended',
-        'plugin:@typescript-eslint/recommended',
-      ],
-      rules: {
-        '@typescript-eslint/no-explicit-any': 'error',
-      },
-    },
-    {
-      files: './packages/data-provider/**/*.ts',
-      overrides: [
-        {
-          files: '**/*.ts',
-          parser: '@typescript-eslint/parser',
-          parserOptions: {
-            project: './packages/data-provider/tsconfig.json',
-          },
-        },
-      ],
-    },
-    {
-      files: ['./packages/data-provider/specs/**/*.ts'],
-      parserOptions: {
-        project: './packages/data-provider/tsconfig.spec.json',
-      },
-    },
-  ],
-  settings: {
-    react: {
-      createClass: 'createReactClass', // Regex for Component Factory to use,
-      // default to "createReactClass"
-      pragma: 'React', // Pragma to use, default to "React"
-      fragment: 'Fragment', // Fragment to use (may be a property of <pragma>), default to "Fragment"
-      version: 'detect', // React version. "detect" automatically picks the version you have installed.
-    },
-    'import/parsers': {
-      '@typescript-eslint/parser': ['.ts', '.tsx'],
-    },
-    'import/resolver': {
-      typescript: {
-        project: ['./client/tsconfig.json'],
-      },
-      node: {
-        project: ['./client/tsconfig.json'],
-      },
-    },
-  },
-};
+      files: ['**/*.ts', '**/*.ts
