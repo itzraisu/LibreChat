@@ -10,7 +10,7 @@ import ChatGPT from './ChatGPT';
 import Anthropic from './Anthropic';
 import PluginsByIndex from './PluginsByIndex';
 
-export const options: { [key: string]: FC<TModelSelectProps> } = {
+const options = {
   [EModelEndpoint.openAI]: OpenAI,
   [EModelEndpoint.custom]: OpenAI,
   [EModelEndpoint.azureOpenAI]: OpenAI,
@@ -19,9 +19,11 @@ export const options: { [key: string]: FC<TModelSelectProps> } = {
   [EModelEndpoint.gptPlugins]: Plugins,
   [EModelEndpoint.anthropic]: Anthropic,
   [EModelEndpoint.chatGPTBrowser]: ChatGPT,
-};
+} as const;
 
-export const multiChatOptions = {
+type TOptios = typeof options;
+type TMultiChatOptions = { [K in keyof TOptios]: TOptios[K] extends FC<TModelSelectProps> ? TOptios[K] : never };
+
+const multiChatOptions: TMultiChatOptions = {
   ...options,
-  [EModelEndpoint.gptPlugins]: PluginsByIndex,
-};
+  [EModelEndpoint.gpt
