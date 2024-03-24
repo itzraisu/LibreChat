@@ -1,2 +1,4 @@
-export { default as SidePanel } from './SidePanel';
-export { default as SideNav } from './Nav';
+import SidePanel from './SidePanel';
+import SideNav from './Nav';
+
+export { SidePanel as DefaultSidePanel, SideNav as DefaultSideNav };
