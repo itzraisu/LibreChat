@@ -1,41 +1,42 @@
 const ask = require('./ask');
-const edit = require('./edit');
-const messages = require('./messages');
+const balance = require('./balance');
+const config = require('./config');
 const convos = require('./convos');
+const edit = require('./edit');
+const endpoints = require('./endpoints');
+const files = require('./files');
+const assistants = require('./assistants');
+const auth = require('./auth');
+const keys = require('./keys');
+const oauth = require('./oauth');
+const messages = require('./messages');
+const models = require('./models');
+const plugins = require('./plugins');
 const presets = require('./presets');
 const prompts = require('./prompts');
 const search = require('./search');
 const tokenizer = require('./tokenizer');
-const auth = require('./auth');
-const keys = require('./keys');
-const oauth = require('./oauth');
-const endpoints = require('./endpoints');
-const balance = require('./balance');
-const models = require('./models');
-const plugins = require('./plugins');
 const user = require('./user');
-const config = require('./config');
-const assistants = require('./assistants');
-const files = require('./files');
 
+// Export all modules as an object
 module.exports = {
-  search,
   ask,
-  edit,
-  messages,
+  balance,
+  config,
   convos,
-  presets,
-  prompts,
+  edit,
+  endpoints,
+  files,
+  assistants,
   auth,
   keys,
   oauth,
-  user,
-  tokenizer,
-  endpoints,
-  balance,
+  messages,
   models,
   plugins,
-  config,
-  assistants,
-  files,
+  presets,
+  prompts,
+  search,
+  tokenizer,
+  user,
 };
