@@ -1,18 +1,16 @@
-import { memo } from 'react';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import remarkMath from 'remark-math';
-import supersub from 'remark-supersub';
-import rehypeKatex from 'rehype-katex';
-import { useRecoilValue } from 'recoil';
-import ReactMarkdown from 'react-markdown';
-import rehypeHighlight from 'rehype-highlight';
+import { memo, useContext } from 'react';
 import type { TMessage } from 'librechat-data-provider';
 import type { PluggableList } from 'unified';
 import CodeBlock from '~/components/Messages/Content/CodeBlock';
 import { cn, langSubset, validateIframe, processLaTeX } from '~/utils';
 import { useChatContext } from '~/Providers';
 import store from '~/store';
+import ReactMarkdown from 'react-markdown';
+import rehypeHighlight from 'rehype-highlight';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import supersub from 'remark-supersub';
+import rehypeKatex from 'rehype-katex';
 
 type TCodeProps = {
   inline: boolean;
@@ -26,7 +24,7 @@ type TContentProps = {
   showCursor?: boolean;
 };
 
-export const code = memo(({ inline, className, children }: TCodeProps) => {
+const code = memo(({ inline, className, children }: TCodeProps) => {
   const match = /language-(\w+)/.exec(className || '');
   const lang = match && match[1];
 
@@ -37,11 +35,12 @@ export const code = memo(({ inline, className, children }: TCodeProps) => {
   }
 });
 
-export const p = memo(({ children }: { children: React.ReactNode }) => {
+const p = memo(({ children }: { children: React.ReactNode }) => {
   return <p className="mb-2 whitespace-pre-wrap">{children}</p>;
 });
 
 const cursor = ' ';
+
 const Markdown = memo(({ content, message, showCursor }: TContentProps) => {
   const { isSubmitting, latestMessage } = useChatContext();
   const LaTeXParsing = useRecoilValue<boolean>(store.LaTeXParsing);
@@ -70,23 +69,9 @@ const Markdown = memo(({ content, message, showCursor }: TContentProps) => {
     [rehypeRaw],
   ];
 
-  if (isInitializing) {
-    rehypePlugins.pop();
-    return (
-      <div className="absolute">
-        <p className="relative">
-          <span className={cn(isSubmitting ? 'result-thinking' : '')} />
-        </p>
-      </div>
-    );
-  }
+  const isValidIframe = !isEdited ? validateIframe(currentContent) : false;
 
-  let isValidIframe: string | boolean | null = false;
-  if (!isEdited) {
-    isValidIframe = validateIframe(currentContent);
-  }
-
-  if (isEdited || ((!isInitializing || !isLatestMessage) && !isValidIframe)) {
+  if (isEdited || (!isInitializing && !isLatestMessage && !isValidIframe)) {
     rehypePlugins.pop();
   }
 
@@ -95,14 +80,10 @@ const Markdown = memo(({ content, message, showCursor }: TContentProps) => {
       remarkPlugins={[supersub, remarkGfm, [remarkMath, { singleDollarTextMath: true }]]}
       rehypePlugins={rehypePlugins}
       linkTarget="_new"
-      components={
-        {
-          code,
-          p,
-        } as {
-          [nodeType: string]: React.ElementType;
-        }
-      }
+      components={{
+        code,
+        p,
+      }}
     >
       {isLatestMessage && isSubmitting && !isInitializing && showCursor
         ? currentContent + cursor
