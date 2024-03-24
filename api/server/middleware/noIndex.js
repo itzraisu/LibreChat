@@ -1,7 +1,12 @@
-const noIndex = (req, res, next) => {
-  const shouldNoIndex = process.env.NO_INDEX ? process.env.NO_INDEX === 'true' : true;
+const shouldNoIndex = () => {
+  if (process.env.NO_INDEX) {
+    return process.env.NO_INDEX.toLowerCase() === 'true';
+  }
+  return true;
+};
 
-  if (shouldNoIndex) {
+const noIndex = (req, res, next) => {
+  if (shouldNoIndex()) {
     res.setHeader('X-Robots-Tag', 'noindex');
   }
 
@@ -9,3 +14,4 @@ const noIndex = (req, res, next) => {
 };
 
 module.exports = noIndex;
+
