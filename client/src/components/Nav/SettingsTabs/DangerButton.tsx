@@ -1,13 +1,20 @@
 import { forwardRef } from 'react';
-import type { ForwardedRef } from 'react';
-import { CheckIcon } from 'lucide-react';
-import { DialogButton } from '~/components/ui';
+import { DialogButton, DialogButtonProps } from '~/components/ui';
 import { Spinner } from '~/components/svg';
+import { cn } from '~/utils';
 import type { TDangerButtonProps } from '~/common';
 import { useLocalize } from '~/hooks';
-import { cn } from '~/utils';
 
-const DangerButton = (props: TDangerButtonProps, ref: ForwardedRef<HTMLButtonElement>) => {
+type TDialogButtonWithMutationProps = DialogButtonProps & {
+  mutation?: { isLoading: boolean };
+};
+
+const DialogButtonWithMutation = (props: TDialogButtonWithMutationProps) => {
+  const { mutation, children, ...dialogButtonProps } = props;
+  return <DialogButton {...dialogButtonProps}>{mutation && mutation.isLoading ? <Spinner /> : children}</DialogButton>;
+};
+
+const DangerButton = forwardRef((props: TDangerButtonProps, ref: ForwardedRef<HTMLButtonElement>) => {
   const {
     id,
     onClick,
@@ -21,50 +28,18 @@ const DangerButton = (props: TDangerButtonProps, ref: ForwardedRef<HTMLButtonEle
     dataTestIdInitial,
     dataTestIdConfirm,
     confirmActionTextCode = 'com_ui_confirm_action',
+    showConfirm = true,
+    confirmLoading = false,
   } = props;
   const localize = useLocalize();
 
-  const renderMutation = (node: React.ReactNode | string) => {
-    if (mutation && mutation.isLoading) {
-      return <Spinner className="h-5 w-5" />;
-    }
-    return node;
-  };
-
   return (
-    <div className="flex items-center justify-between">
-      {showText && <div> {localize(infoTextCode)} </div>}
-      <DialogButton
+    <div className="flex items-center justify-between" data-testid={`danger-button-${id}`}>
+      {showText && <div id={`info-text-${id}`} data-testid={dataTestIdInitial}> {localize(infoTextCode)} </div>}
+      <DialogButtonWithMutation
         id={id}
         ref={ref}
         disabled={disabled}
         onClick={onClick}
         className={cn(
-          ' btn btn-danger relative border-none bg-red-700 text-white hover:bg-red-800 dark:hover:bg-red-800',
-          className,
-        )}
-      >
-        {confirmClear ? (
-          <div
-            className="flex w-full items-center justify-center gap-2"
-            id={`${id}-text`}
-            data-testid={dataTestIdConfirm}
-          >
-            {renderMutation(<CheckIcon className="h-5 w-5" />)}
-            {mutation && mutation.isLoading ? null : localize(confirmActionTextCode)}
-          </div>
-        ) : (
-          <div
-            className="flex w-full items-center justify-center gap-2"
-            id={`${id}-text`}
-            data-testid={dataTestIdInitial}
-          >
-            {renderMutation(localize(actionTextCode))}
-          </div>
-        )}
-      </DialogButton>
-    </div>
-  );
-};
-
-export default forwardRef(DangerButton);
+          ' btn btn-danger relative border-none bg-red-700 text-white hover:bg-red-800 dark:hover:bg-red-80
