@@ -3,36 +3,31 @@ const { getUserKey, checkUserKeyExpiry } = require('~/server/services/UserServic
 
 const initializeClient = async ({ req, res, endpointOption }) => {
   const { ANTHROPIC_API_KEY, ANTHROPIC_REVERSE_PROXY, PROXY } = process.env;
-  const expiresAt = req.body.key;
-  const isUserProvided = ANTHROPIC_API_KEY === 'user_provided';
 
-  const anthropicApiKey = isUserProvided
-    ? await getAnthropicUserKey(req.user.id)
-    : ANTHROPIC_API_KEY;
-
-  if (expiresAt && isUserProvided) {
-    checkUserKeyExpiry(
-      expiresAt,
-      'Your ANTHROPIC_API_KEY has expired. Please provide your API key again.',
-    );
+  if (!ANTHROPIC_API_KEY) {
+    throw new Error('ANTHROPIC_API_KEY environment variable is not set');
   }
 
-  const client = new AnthropicClient(anthropicApiKey, {
-    req,
-    res,
-    reverseProxyUrl: ANTHROPIC_REVERSE_PROXY ?? null,
-    proxy: PROXY ?? null,
-    ...endpointOption,
-  });
+  if (ANTHROPIC_REVERSE_PROXY && !ANTHROPIC_REVERSE_PROXY.startsWith('http')) {
+    throw new Error('ANTHROPIC_REVERSE_PROXY environment variable is not a valid URL');
+  }
 
-  return {
-    client,
-    anthropicApiKey,
-  };
-};
+  if (PROXY && !PROXY.startsWith('http')) {
+    throw new Error('PROXY environment variable is not a valid URL');
+  }
 
-const getAnthropicUserKey = async (userId) => {
-  return await getUserKey({ userId, name: 'anthropic' });
-};
+  const expiresAt = req.body.key ? new Date(req.body.key.expiresAt) : null;
+  const isUserProvided = ANTHROPIC_API_KEY === 'user_provided';
 
-module.exports = initializeClient;
+  let anthropicApiKey;
+  if (isUserProvided) {
+    if (!expiresAt) {
+      throw new Error('User-provided API key is missing an expiration time');
+    }
+
+    anthropicApiKey = await getAnthropicUserKey(req.user.id);
+
+    if (expiresAt < new Date()) {
+      throw new Error('Your ANTHROPIC_API_KEY has expired. Please provide your API key again.');
+    }
+  } else {
