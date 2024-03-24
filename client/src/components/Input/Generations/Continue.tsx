@@ -8,8 +8,10 @@ export default function Continue({ onClick }: TGenButtonProps) {
 
   return (
     <Button type="continue" onClick={onClick}>
-      <ContinueIcon className="text-gray-600/90 dark:text-gray-400 " />
+      <ContinueIcon className="text-gray-600/90 dark:text-gray-400 mr-2" alt="Continue Icon" />
       {localize('com_ui_continue')}
+      <span className="block mt-1" />
     </Button>
   );
 }
+
