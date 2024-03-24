@@ -15,62 +15,46 @@ const allowedCharactersRegex = new RegExp(
     ']+$', // End of string
   'u', // Use Unicode mode
 );
-const injectionPatternsRegex = /('|--|\$ne|\$gt|\$lt|\$or|\{|\}|\*|;|<|>|\/|=)/i;
+
+const injectionPatternsRegex = /('|--|\$ne|\$gt|\$lt|\$or|\{|\}|\*|;|<|>|\/|=)/;
 
 const usernameSchema = z
   .string()
   .min(2)
   .max(80)
-  .refine((value) => allowedCharactersRegex.test(value), {
-    message: 'Invalid characters in username',
-  })
+  .regex(allowedCharactersRegex, 'Invalid characters in username')
   .refine((value) => !injectionPatternsRegex.test(value), {
     message: 'Potential injection attack detected',
   });
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z
-    .string()
-    .min(8)
-    .max(128)
-    .refine((value) => value.trim().length > 0, {
-      message: 'Password cannot be only spaces',
-    }),
-});
-
-const registerSchema = z
-  .object({
-    name: z.string().min(3).max(80),
-    username: z
-      .union([z.literal(''), usernameSchema])
-      .transform((value) => (value === '' ? null : value))
-      .optional()
-      .nullable(),
-    email: z.string().email(),
-    password: z
-      .string()
-      .min(8)
-      .max(128)
-      .refine((value) => value.trim().length > 0, {
-        message: 'Password cannot be only spaces',
-      }),
-    confirm_password: z
-      .string()
-      .min(8)
-      .max(128)
-      .refine((value) => value.trim().length > 0, {
-        message: 'Password cannot be only spaces',
-      }),
-  })
-  .superRefine(({ confirm_password, password }, ctx) => {
-    if (confirm_password !== password) {
+const passwordSchema = z
+  .string()
+  .min(8)
+  .max(128)
+  .regex(/^\S*$/, 'Password cannot contain only spaces')
+  .superRefine((value, ctx) => {
+    if (value !== ctx.input.confirm_password) {
       ctx.addIssue({
         code: 'custom',
         message: 'The passwords did not match',
       });
     }
   });
+
+const emailSchema = z.string().email('Invalid email format');
+
+const loginSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+});
+
+const registerSchema = z.object({
+  name: z.string().min(3).max(80),
+  username: z.union([z.literal(''), usernameSchema]).optional().nullable(),
+  email: emailSchema,
+  password: passwordSchema,
+  confirm_password: passwordSchema,
+});
 
 module.exports = {
   loginSchema,
