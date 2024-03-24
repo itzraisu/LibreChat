@@ -3,37 +3,50 @@ const { isDomainAllowed } = require('./AuthService');
 
 jest.mock('~/server/services/Config/getCustomConfig', () => jest.fn());
 
-describe('isDomainAllowed', () => {
+describe('AuthService - isDomainAllowed', () => {
+  const defaultConfig = {
+    registration: {
+      allowedDomains: ['domain1.com', 'domain2.com'],
+    },
+  };
+
+  beforeEach(() => {
+    getCustomConfig.mockReset();
+  });
+
   it('should allow domain when customConfig is not available', async () => {
     getCustomConfig.mockResolvedValue(null);
-    await expect(isDomainAllowed('test@domain1.com')).resolves.toBe(true);
+    const result = await isDomainAllowed('test@domain1.com');
+    expect(result).toBe(true);
   });
 
   it('should allow domain when allowedDomains is not defined in customConfig', async () => {
     getCustomConfig.mockResolvedValue({});
-    await expect(isDomainAllowed('test@domain1.com')).resolves.toBe(true);
+    const result = await isDomainAllowed('test@domain1.com');
+    expect(result).toBe(true);
   });
 
   it('should reject an email if it is falsy', async () => {
     getCustomConfig.mockResolvedValue({});
-    await expect(isDomainAllowed('')).resolves.toBe(false);
+    const result = await isDomainAllowed('');
+    expect(result).toBe(false);
   });
 
   it('should allow a domain if it is included in the allowedDomains', async () => {
-    getCustomConfig.mockResolvedValue({
-      registration: {
-        allowedDomains: ['domain1.com', 'domain2.com'],
-      },
-    });
-    await expect(isDomainAllowed('user@domain1.com')).resolves.toBe(true);
+    getCustomConfig.mockResolvedValue(defaultConfig);
+    const result = await isDomainAllowed('user@domain1.com');
+    expect(result).toBe(true);
   });
 
   it('should reject a domain if it is not included in the allowedDomains', async () => {
-    getCustomConfig.mockResolvedValue({
-      registration: {
-        allowedDomains: ['domain1.com', 'domain2.com'],
-      },
-    });
-    await expect(isDomainAllowed('user@domain3.com')).resolves.toBe(false);
+    getCustomConfig.mockResolvedValue(defaultConfig);
+    const result = await isDomainAllowed('user@domain3.com');
+    expect(result).toBe(false);
+  });
+
+  it('should return false if customConfig throws an error', async () => {
+    getCustomConfig.mockRejectedValue(new Error('Custom config error'));
+    const result = await isDomainAllowed('test@domain1.com');
+    expect(result).toBe(false);
   });
 });
