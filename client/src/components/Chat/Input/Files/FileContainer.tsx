@@ -1,16 +1,16 @@
+import React from 'react';
 import type { TFile } from 'librechat-data-provider';
 import type { ExtendedFile } from '~/common';
 import FilePreview from './FilePreview';
 import RemoveFile from './RemoveFile';
 import { getFileType } from '~/utils';
 
-const FileContainer = ({
-  file,
-  onDelete,
-}: {
+type FileContainerProps = {
   file: ExtendedFile | TFile;
   onDelete?: () => void;
-}) => {
+};
+
+const FileContainer: React.FC<FileContainerProps> = ({ file, onDelete }) => {
   const fileType = getFileType(file.type);
 
   return (
@@ -18,7 +18,12 @@ const FileContainer = ({
       <div className="relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-600">
         <div className="w-60 p-2 dark:bg-gray-600">
           <div className="flex flex-row items-center gap-2">
-            <FilePreview file={file} fileType={fileType} className="relative" />
+            <FilePreview
+              file={file}
+              fileType={fileType}
+              className="relative"
+              alt={file.filename}
+            />
             <div className="overflow-hidden">
               <div className="truncate font-medium">{file.filename}</div>
               <div className="truncate text-gray-300">{fileType.title}</div>
@@ -26,9 +31,9 @@ const FileContainer = ({
           </div>
         </div>
       </div>
-      {onDelete && <RemoveFile onRemove={onDelete} />}
+      {onDelete && <RemoveFile onRemove={onDelete} className="absolute top-0 right-0" />}
     </div>
   );
 };
 
-export default FileContainer;
+
